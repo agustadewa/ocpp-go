@@ -1,13 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 )
 
-func (handler *ChargingStationHandler) OnCancelReservation(request *reservation.CancelReservationRequest) (resp *reservation.CancelReservationResponse, err error) {
+func (handler *ChargingStationHandler) OnCancelReservation(ctx context.Context, request *reservation.CancelReservationRequest) (resp *reservation.CancelReservationResponse, err error) {
 	for i, e := range handler.evse {
 		if e.currentReservation == request.ReservationID {
 			// Found reservation -> cancel
@@ -29,7 +31,7 @@ func (handler *ChargingStationHandler) OnCancelReservation(request *reservation.
 	return
 }
 
-func (handler *ChargingStationHandler) OnReserveNow(request *reservation.ReserveNowRequest) (resp *reservation.ReserveNowResponse, err error) {
+func (handler *ChargingStationHandler) OnReserveNow(ctx context.Context, request *reservation.ReserveNowRequest) (resp *reservation.ReserveNowResponse, err error) {
 	var reservedEvse int
 	var reservedConnector int
 	var status reservation.ReserveNowStatus

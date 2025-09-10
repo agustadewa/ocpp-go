@@ -5,7 +5,11 @@
 // - support for certificate-based authentication and authorization at the charging station, i.e. plug and charge
 package iso15118
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import (
+	"context"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+)
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 ISO 15118 profile.
 type CSMSHandler interface {
@@ -18,11 +22,11 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 ISO 15118 profile.
 type ChargingStationHandler interface {
 	// OnDeleteCertificate is called on a charging station whenever a DeleteCertificateRequest is received from the CSMS.
-	OnDeleteCertificate(request *DeleteCertificateRequest) (response *DeleteCertificateResponse, err error)
+	OnDeleteCertificate(ctx context.Context, request *DeleteCertificateRequest) (response *DeleteCertificateResponse, err error)
 	// OnGetInstalledCertificateIds is called on a charging station whenever a GetInstalledCertificateIdsRequest is received from the CSMS.
-	OnGetInstalledCertificateIds(request *GetInstalledCertificateIdsRequest) (response *GetInstalledCertificateIdsResponse, err error)
+	OnGetInstalledCertificateIds(ctx context.Context, request *GetInstalledCertificateIdsRequest) (response *GetInstalledCertificateIdsResponse, err error)
 	// OnInstallCertificate is called on a charging station whenever an InstallCertificateRequest is received from the CSMS.
-	OnInstallCertificate(request *InstallCertificateRequest) (response *InstallCertificateResponse, err error)
+	OnInstallCertificate(ctx context.Context, request *InstallCertificateRequest) (response *InstallCertificateResponse, err error)
 }
 
 const ProfileName = "ISO15118"

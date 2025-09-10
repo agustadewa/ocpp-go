@@ -1,7 +1,11 @@
 // The diagnostics functional block contains OCPP 2.0 features than enable remote diagnostics of problems with a charging station.
 package diagnostics
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import (
+	"context"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+)
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Diagnostics profile.
 type CSMSHandler interface {
@@ -18,19 +22,19 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Diagnostics profile.
 type ChargingStationHandler interface {
 	// OnClearVariableMonitoring is called on a charging station whenever a ClearVariableMonitoringRequest is received from the CSMS.
-	OnClearVariableMonitoring(request *ClearVariableMonitoringRequest) (response *ClearVariableMonitoringResponse, err error)
+	OnClearVariableMonitoring(ctx context.Context, request *ClearVariableMonitoringRequest) (response *ClearVariableMonitoringResponse, err error)
 	// OnCustomerInformation is called on a charging station whenever a CustomerInformationRequest is received from the CSMS.
-	OnCustomerInformation(request *CustomerInformationRequest) (response *CustomerInformationResponse, err error)
+	OnCustomerInformation(ctx context.Context, request *CustomerInformationRequest) (response *CustomerInformationResponse, err error)
 	// OnGetLog is called on a charging station whenever a GetLogRequest is received from the CSMS.
-	OnGetLog(request *GetLogRequest) (response *GetLogResponse, err error)
+	OnGetLog(ctx context.Context, request *GetLogRequest) (response *GetLogResponse, err error)
 	// OnGetMonitoringReport is called on a charging station whenever a GetMonitoringReportRequest is received from the CSMS.
-	OnGetMonitoringReport(request *GetMonitoringReportRequest) (response *GetMonitoringReportResponse, err error)
+	OnGetMonitoringReport(ctx context.Context, request *GetMonitoringReportRequest) (response *GetMonitoringReportResponse, err error)
 	// OnSetMonitoringBase is called on a charging station whenever a SetMonitoringBaseRequest is received from the CSMS.
-	OnSetMonitoringBase(request *SetMonitoringBaseRequest) (response *SetMonitoringBaseResponse, err error)
+	OnSetMonitoringBase(ctx context.Context, request *SetMonitoringBaseRequest) (response *SetMonitoringBaseResponse, err error)
 	// OnSetMonitoringLevel is called on a charging station whenever a SetMonitoringLevelRequest is received from the CSMS.
-	OnSetMonitoringLevel(request *SetMonitoringLevelRequest) (response *SetMonitoringLevelResponse, err error)
+	OnSetMonitoringLevel(ctx context.Context, request *SetMonitoringLevelRequest) (response *SetMonitoringLevelResponse, err error)
 	// OnSetVariableMonitoring is called on a charging station whenever a SetVariableMonitoringRequest is received from the CSMS.
-	OnSetVariableMonitoring(request *SetVariableMonitoringRequest) (response *SetVariableMonitoringResponse, err error)
+	OnSetVariableMonitoring(ctx context.Context, request *SetVariableMonitoringRequest) (response *SetVariableMonitoringResponse, err error)
 }
 
 const ProfileName = "Diagnostics"

@@ -115,7 +115,7 @@ func (suite *OcppV2TestSuite) TestNotifyMonitoringReportE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	r, err := suite.chargingStation.NotifyMonitoringReport(requestID, seqNo, generatedAt, []diagnostics.MonitoringData{monitoringData}, func(request *diagnostics.NotifyMonitoringReportRequest) {
+	r, err := suite.chargingStation.NotifyMonitoringReport(nil, requestID, seqNo, generatedAt, []diagnostics.MonitoringData{monitoringData}, func(request *diagnostics.NotifyMonitoringReportRequest) {
 		request.Tbc = tbc
 	})
 	assert.Nil(t, err)

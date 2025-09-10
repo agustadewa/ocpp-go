@@ -2,7 +2,11 @@
 // A CSMS can also instruct a charging station to change its availability.
 package availability
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import (
+	"context"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+)
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Availability profile.
 type CSMSHandler interface {
@@ -15,7 +19,7 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Availability profile.
 type ChargingStationHandler interface {
 	// OnChangeAvailability is called on a charging station whenever a ChangeAvailabilityRequest is received from the CSMS.
-	OnChangeAvailability(request *ChangeAvailabilityRequest) (response *ChangeAvailabilityResponse, err error)
+	OnChangeAvailability(ctx context.Context, request *ChangeAvailabilityRequest) (response *ChangeAvailabilityResponse, err error)
 }
 
 const ProfileName = "Availability"

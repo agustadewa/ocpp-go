@@ -62,7 +62,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
-	confirmation, err := suite.chargingStation.DataTransfer(vendorId)
+	confirmation, err := suite.chargingStation.DataTransfer(nil, vendorId)
 	assert.Nil(t, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.Status)

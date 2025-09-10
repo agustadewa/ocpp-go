@@ -1,27 +1,29 @@
 package main
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/firmware"
-	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"context"
 	"io"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/firmware"
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
-func (handler *ChargingStationHandler) OnPublishFirmware(request *firmware.PublishFirmwareRequest) (response *firmware.PublishFirmwareResponse, err error) {
+func (handler *ChargingStationHandler) OnPublishFirmware(ctx context.Context, request *firmware.PublishFirmwareRequest) (response *firmware.PublishFirmwareResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
-func (handler *ChargingStationHandler) OnUnpublishFirmware(request *firmware.UnpublishFirmwareRequest) (response *firmware.UnpublishFirmwareResponse, err error) {
+func (handler *ChargingStationHandler) OnUnpublishFirmware(ctx context.Context, request *firmware.UnpublishFirmwareRequest) (response *firmware.UnpublishFirmwareResponse, err error) {
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
-func (handler *ChargingStationHandler) OnUpdateFirmware(request *firmware.UpdateFirmwareRequest) (response *firmware.UpdateFirmwareResponse, err error) {
+func (handler *ChargingStationHandler) OnUpdateFirmware(ctx context.Context, request *firmware.UpdateFirmwareRequest) (response *firmware.UpdateFirmwareResponse, err error) {
 	retries := 0
 	retryInterval := 30
 	if request.Retries != nil {
@@ -36,7 +38,7 @@ func (handler *ChargingStationHandler) OnUpdateFirmware(request *firmware.Update
 }
 
 func updateFirmwareStatus(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) {
-	statusConfirmation, err := chargingStation.FirmwareStatusNotification(status, props...)
+	statusConfirmation, err := chargingStation.FirmwareStatusNotification(nil, status, props...)
 	checkError(err)
 	logDefault(statusConfirmation.GetFeatureName()).Infof("firmware status updated to %v", status)
 }

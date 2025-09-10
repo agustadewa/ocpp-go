@@ -63,7 +63,7 @@ func (suite *OcppV2TestSuite) TestLogStatusNotificationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargingStation.LogStatusNotification(status, requestID)
+	confirmation, err := suite.chargingStation.LogStatusNotification(nil, status, requestID)
 	assert.Nil(t, err)
 	assert.NotNil(t, confirmation)
 }

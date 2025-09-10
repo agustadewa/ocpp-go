@@ -82,11 +82,11 @@ func (suite *OcppV2TestSuite) TestVariableAttributeValidation() {
 		{provisioning.VariableAttribute{Type: types.AttributeActual, Value: "someValue", Mutability: provisioning.MutabilityReadWrite}, true},
 		{provisioning.VariableAttribute{Type: types.AttributeActual, Value: "someValue"}, true},
 		{provisioning.VariableAttribute{Value: "someValue"}, true},
-		//TODO: enable tests once validation on mutability field is enabled
-		//{provisioning.VariableAttribute{Mutability: provisioning.MutabilityWriteOnly}, true},
-		//{provisioning.VariableAttribute{}, false},
-		//{provisioning.VariableAttribute{Mutability: provisioning.MutabilityReadOnly}, false},
-		//{provisioning.VariableAttribute{Mutability: provisioning.MutabilityReadWrite}, false},
+		// TODO: enable tests once validation on mutability field is enabled
+		// {provisioning.VariableAttribute{Mutability: provisioning.MutabilityWriteOnly}, true},
+		// {provisioning.VariableAttribute{}, false},
+		// {provisioning.VariableAttribute{Mutability: provisioning.MutabilityReadOnly}, false},
+		// {provisioning.VariableAttribute{Mutability: provisioning.MutabilityReadWrite}, false},
 		{provisioning.VariableAttribute{Type: "invalidType", Value: "someValue", Mutability: provisioning.MutabilityReadWrite}, false},
 		{provisioning.VariableAttribute{Type: types.AttributeActual, Value: "someValue", Mutability: "invalidMutability"}, false},
 		{provisioning.VariableAttribute{Type: types.AttributeActual, Value: ">2500................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................", Mutability: provisioning.MutabilityReadWrite}, false},
@@ -154,7 +154,7 @@ func (suite *OcppV2TestSuite) TestNotifyReportE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.NotifyReport(requestID, generatedAt, seqNo, func(request *provisioning.NotifyReportRequest) {
+	response, err := suite.chargingStation.NotifyReport(nil, requestID, generatedAt, seqNo, func(request *provisioning.NotifyReportRequest) {
 		request.ReportData = []provisioning.ReportData{reportData}
 		request.Tbc = tbc
 	})

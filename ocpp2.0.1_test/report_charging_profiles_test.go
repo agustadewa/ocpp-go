@@ -110,7 +110,7 @@ func (suite *OcppV2TestSuite) TestReportChargingProfilesE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	r, err := suite.chargingStation.ReportChargingProfiles(requestID, chargingLimitSource, evseID, []types.ChargingProfile{chargingProfile}, func(request *smartcharging.ReportChargingProfilesRequest) {
+	r, err := suite.chargingStation.ReportChargingProfiles(nil, requestID, chargingLimitSource, evseID, []types.ChargingProfile{chargingProfile}, func(request *smartcharging.ReportChargingProfilesRequest) {
 		request.Tbc = tbc
 	})
 	require.NoError(t, err)

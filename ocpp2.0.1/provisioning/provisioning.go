@@ -2,7 +2,11 @@
 // Additionally, it contains features for retrieving information about the configuration of Charging Stations, make changes to the configuration, resetting it etc.
 package provisioning
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import (
+	"context"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+)
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Provisioning profile.
 type CSMSHandler interface {
@@ -15,17 +19,17 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Provisioning profile.
 type ChargingStationHandler interface {
 	// OnGetBaseReport is called on a charging station whenever a GetBaseReportRequest is received from the CSMS.
-	OnGetBaseReport(request *GetBaseReportRequest) (response *GetBaseReportResponse, err error)
+	OnGetBaseReport(ctx context.Context, request *GetBaseReportRequest) (response *GetBaseReportResponse, err error)
 	// OnGetReport is called on a charging station whenever a GetReportRequest is received from the CSMS.
-	OnGetReport(request *GetReportRequest) (response *GetReportResponse, err error)
+	OnGetReport(ctx context.Context, request *GetReportRequest) (response *GetReportResponse, err error)
 	// OnGetVariables is called on a charging station whenever a GetVariablesRequest is received from the CSMS.
-	OnGetVariables(request *GetVariablesRequest) (response *GetVariablesResponse, err error)
+	OnGetVariables(ctx context.Context, request *GetVariablesRequest) (response *GetVariablesResponse, err error)
 	// OnReset is called on a charging station whenever a ResetRequest is received from the CSMS.
-	OnReset(request *ResetRequest) (response *ResetResponse, err error)
+	OnReset(ctx context.Context, request *ResetRequest) (response *ResetResponse, err error)
 	// OnSetNetworkProfile is called on a charging station whenever a SetNetworkProfileRequest is received from the CSMS.
-	OnSetNetworkProfile(request *SetNetworkProfileRequest) (response *SetNetworkProfileResponse, err error)
+	OnSetNetworkProfile(ctx context.Context, request *SetNetworkProfileRequest) (response *SetNetworkProfileResponse, err error)
 	// OnSetVariables is called on a charging station whenever a SetVariablesRequest is received from the CSMS.
-	OnSetVariables(request *SetVariablesRequest) (response *SetVariablesResponse, err error)
+	OnSetVariables(ctx context.Context, request *SetVariablesRequest) (response *SetVariablesResponse, err error)
 }
 
 const ProfileName = "Provisioning"

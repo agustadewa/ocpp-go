@@ -57,7 +57,7 @@ func (suite *OcppV2TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.FirmwareStatusNotification(status, func(request *firmware.FirmwareStatusNotificationRequest) {
+	response, err := suite.chargingStation.FirmwareStatusNotification(nil, status, func(request *firmware.FirmwareStatusNotificationRequest) {
 		request.RequestID = &requestID
 	})
 	assert.Nil(t, err)

@@ -70,7 +70,7 @@ func (suite *OcppV2TestSuite) TestNotifyCustomerInformationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	r, err := suite.chargingStation.NotifyCustomerInformation(data, seqNo, generatedAt, requestID)
+	r, err := suite.chargingStation.NotifyCustomerInformation(nil, data, seqNo, generatedAt, requestID)
 	assert.Nil(t, err)
 	assert.NotNil(t, r)
 }

@@ -67,7 +67,7 @@ func (suite *OcppV2TestSuite) TestGetCertificateStatusE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargingStation.GetCertificateStatus(ocspData)
+	confirmation, err := suite.chargingStation.GetCertificateStatus(nil, ocspData)
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.Status)

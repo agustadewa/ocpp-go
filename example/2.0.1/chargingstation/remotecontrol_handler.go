@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"math/rand"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 )
 
-func (handler *ChargingStationHandler) OnRequestStartTransaction(request *remotecontrol.RequestStartTransactionRequest) (response *remotecontrol.RequestStartTransactionResponse, err error) {
+func (handler *ChargingStationHandler) OnRequestStartTransaction(ctx context.Context, request *remotecontrol.RequestStartTransactionRequest) (response *remotecontrol.RequestStartTransactionResponse, err error) {
 	if request.EvseID != nil {
 		evse, ok := handler.evse[*request.EvseID]
 		if !ok || evse.availability != availability.OperationalStatusOperative {
@@ -35,7 +36,7 @@ func (handler *ChargingStationHandler) OnRequestStartTransaction(request *remote
 	return remotecontrol.NewRequestStartTransactionResponse(remotecontrol.RequestStartStopStatusRejected), nil
 }
 
-func (handler *ChargingStationHandler) OnRequestStopTransaction(request *remotecontrol.RequestStopTransactionRequest) (response *remotecontrol.RequestStopTransactionResponse, err error) {
+func (handler *ChargingStationHandler) OnRequestStopTransaction(ctx context.Context, request *remotecontrol.RequestStopTransactionRequest) (response *remotecontrol.RequestStopTransactionResponse, err error) {
 	for key, evse := range handler.evse {
 		if evse.currentTransaction == request.TransactionID {
 			logDefault(request.GetFeatureName()).Infof("stopped transaction %v on evse %v", evse.currentTransaction, key)
@@ -57,14 +58,14 @@ func (handler *ChargingStationHandler) OnRequestStopTransaction(request *remotec
 	return remotecontrol.NewRequestStopTransactionResponse(remotecontrol.RequestStartStopStatusRejected), nil
 }
 
-func (handler *ChargingStationHandler) OnTriggerMessage(request *remotecontrol.TriggerMessageRequest) (response *remotecontrol.TriggerMessageResponse, err error) {
+func (handler *ChargingStationHandler) OnTriggerMessage(ctx context.Context, request *remotecontrol.TriggerMessageRequest) (response *remotecontrol.TriggerMessageResponse, err error) {
 	logDefault(request.GetFeatureName()).Infof("received trigger for %v", request.RequestedMessage)
 	status := remotecontrol.TriggerMessageStatusRejected
 	switch request.RequestedMessage {
 	case remotecontrol.MessageTriggerBootNotification:
 		// Boot Notification
 		go func() {
-			_, e := chargingStation.BootNotification(provisioning.BootReasonTriggered, handler.model, handler.vendor)
+			_, e := chargingStation.BootNotification(nil, provisioning.BootReasonTriggered, handler.model, handler.vendor)
 			checkError(e)
 			logDefault(provisioning.BootNotificationFeatureName).Info("boot notification completed")
 		}()
@@ -73,25 +74,25 @@ func (handler *ChargingStationHandler) OnTriggerMessage(request *remotecontrol.T
 		// Log Status Notification
 		go func() {
 			reqID := rand.Int()
-			_, e := chargingStation.LogStatusNotification(diagnostics.UploadLogStatusUploading, reqID)
+			_, e := chargingStation.LogStatusNotification(nil, diagnostics.UploadLogStatusUploading, reqID)
 			checkError(e)
 			logDefault(diagnostics.LogStatusNotificationFeatureName).Info("diagnostics status notified")
 		}()
 		status = remotecontrol.TriggerMessageStatusAccepted
 	case remotecontrol.MessageTriggerFirmwareStatusNotification:
-		//TODO: schedule firmware status notification message
+		// TODO: schedule firmware status notification message
 		status = remotecontrol.TriggerMessageStatusAccepted
 	case remotecontrol.MessageTriggerHeartbeat:
 		// Schedule heartbeat request
 		go func() {
-			resp, e := chargingStation.Heartbeat()
+			resp, e := chargingStation.Heartbeat(nil)
 			checkError(e)
 			logDefault(availability.HeartbeatFeatureName).Infof("clock synchronized: %v", resp.CurrentTime.FormatTimestamp())
 		}()
 		status = remotecontrol.TriggerMessageStatusAccepted
 	case remotecontrol.MessageTriggerMeterValues:
 		// Schedule meter values update
-		//TODO: schedule meter values message
+		// TODO: schedule meter values message
 		break
 	case remotecontrol.MessageTriggerStatusNotification:
 		// Schedule connector status notification
@@ -114,7 +115,7 @@ func (handler *ChargingStationHandler) OnTriggerMessage(request *remotecontrol.T
 			}
 			// Update asynchronously
 			go func() {
-				_, e := chargingStation.StatusNotification(types.NewDateTime(time.Now()), connectorStatus, request.Evse.ID, *request.Evse.ConnectorID)
+				_, e := chargingStation.StatusNotification(nil, types.NewDateTime(time.Now()), connectorStatus, request.Evse.ID, *request.Evse.ConnectorID)
 				checkError(e)
 				logDefault(availability.HeartbeatFeatureName).Infof("status for connector %v sent: %v", *request.Evse.ConnectorID, connectorStatus)
 			}()
@@ -132,7 +133,7 @@ func (handler *ChargingStationHandler) OnTriggerMessage(request *remotecontrol.T
 	return remotecontrol.NewTriggerMessageResponse(status), nil
 }
 
-func (handler *ChargingStationHandler) OnUnlockConnector(request *remotecontrol.UnlockConnectorRequest) (response *remotecontrol.UnlockConnectorResponse, err error) {
+func (handler *ChargingStationHandler) OnUnlockConnector(ctx context.Context, request *remotecontrol.UnlockConnectorRequest) (response *remotecontrol.UnlockConnectorResponse, err error) {
 	evse, ok := handler.evse[request.EvseID]
 	if !ok || !evse.hasConnector(request.ConnectorID) {
 		logDefault(request.GetFeatureName()).Errorf("couldn't unlock unknown connector %d for EVSE %d", request.ConnectorID, request.EvseID)

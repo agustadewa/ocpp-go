@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/data"
@@ -127,11 +128,11 @@ func (suite *OcppV2TestSuite) TestCentralSystemSendResponseError() {
 		Field1 string `validate:"required"`
 	}{Field1: ""}
 	dataListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(dataTransferResponse, nil)
-	response, err = suite.chargingStation.DataTransfer("vendor1")
+	response, err = suite.chargingStation.DataTransfer(nil, "vendor1")
 	require.Nil(t, response)
 	require.Error(t, err)
 	require.IsType(t, &ocpp.Error{}, err)
-	ocppErr = err.(*ocpp.Error)
+	errors.As(err, &ocppErr)
 	assert.Equal(t, ocppj.OccurrenceConstraintViolationV2, ocppErr.Code)
 	assert.Equal(t, "Field CallResult.Payload.Data.Field1 required but not found for feature DataTransfer", ocppErr.Description)
 	// Test 2: marshaling error
@@ -139,21 +140,21 @@ func (suite *OcppV2TestSuite) TestCentralSystemSendResponseError() {
 	dataTransferResponse.Data = make(chan struct{})
 	dataListener.ExpectedCalls = nil
 	dataListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(dataTransferResponse, nil)
-	response, err = suite.chargingStation.DataTransfer("vendor1")
+	response, err = suite.chargingStation.DataTransfer(nil, "vendor1")
 	require.Nil(t, response)
 	require.Error(t, err)
 	require.IsType(t, &ocpp.Error{}, err)
-	ocppErr = err.(*ocpp.Error)
+	errors.As(err, &ocppErr)
 	assert.Equal(t, ocppj.GenericError, ocppErr.Code)
 	assert.Equal(t, "json: unsupported type: chan struct {}", ocppErr.Description)
 	// Test 3: no results in callback
 	dataListener.ExpectedCalls = nil
 	dataListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(nil, nil)
-	response, err = suite.chargingStation.DataTransfer("vendor1")
+	response, err = suite.chargingStation.DataTransfer(nil, "vendor1")
 	require.Nil(t, response)
 	require.Error(t, err)
 	require.IsType(t, &ocpp.Error{}, err)
-	ocppErr = err.(*ocpp.Error)
+	errors.As(err, &ocppErr)
 	assert.Equal(t, ocppj.GenericError, ocppErr.Code)
 	assert.Equal(t, fmt.Sprintf("empty response to %s for request 1234", wsId), ocppErr.Description)
 }

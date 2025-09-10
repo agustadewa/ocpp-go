@@ -2,6 +2,7 @@
 package ocpp2
 
 import (
+	"context"
 	"crypto/tls"
 	"net"
 
@@ -64,55 +65,55 @@ type (
 // To send asynchronous messages and avoid blocking the calling thread, refer to SendRequestAsync.
 type ChargingStation interface {
 	// Sends a BootNotificationRequest to the CSMS, along with information about the charging station.
-	BootNotification(reason provisioning.BootReason, model string, chargePointVendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationResponse, error)
+	BootNotification(ctx context.Context, reason provisioning.BootReason, model string, chargePointVendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationResponse, error)
 	// Requests explicit authorization to the CSMS, provided a valid IdToken (typically the customer's). The CSMS may either authorize or reject the token.
-	Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeResponse, error)
+	Authorize(ctx context.Context, idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeResponse, error)
 	// Notifies the CSMS, that a previously set charging limit was cleared.
-	ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *smartcharging.ClearedChargingLimitRequest)) (*smartcharging.ClearedChargingLimitResponse, error)
+	ClearedChargingLimit(ctx context.Context, chargingLimitSource types.ChargingLimitSourceType, props ...func(request *smartcharging.ClearedChargingLimitRequest)) (*smartcharging.ClearedChargingLimitResponse, error)
 	// Performs a custom data transfer to the CSMS. The message payload is not pre-defined and must be supported by the CSMS. Every vendor may implement their own proprietary logic for this message.
-	DataTransfer(vendorId string, props ...func(request *data.DataTransferRequest)) (*data.DataTransferResponse, error)
+	DataTransfer(ctx context.Context, vendorId string, props ...func(request *data.DataTransferRequest)) (*data.DataTransferResponse, error)
 	// Notifies the CSMS of a status change during a firmware update procedure (download, installation).
-	FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationResponse, error)
+	FirmwareStatusNotification(ctx context.Context, status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationResponse, error)
 	// Requests a new certificate, required for an ISO 15118 EV, from the CSMS.
-	Get15118EVCertificate(schemaVersion string, action iso15118.CertificateAction, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateResponse, error)
+	Get15118EVCertificate(ctx context.Context, schemaVersion string, action iso15118.CertificateAction, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateResponse, error)
 	// Requests the CSMS to provide OCSP certificate status for the charging station's 15118 certificates.
-	GetCertificateStatus(ocspRequestData types.OCSPRequestDataType, props ...func(request *iso15118.GetCertificateStatusRequest)) (*iso15118.GetCertificateStatusResponse, error)
+	GetCertificateStatus(ctx context.Context, ocspRequestData types.OCSPRequestDataType, props ...func(request *iso15118.GetCertificateStatusRequest)) (*iso15118.GetCertificateStatusResponse, error)
 	// Notifies the CSMS that the Charging Station is still alive. The response is used for time synchronization purposes.
-	Heartbeat(props ...func(request *availability.HeartbeatRequest)) (*availability.HeartbeatResponse, error)
+	Heartbeat(ctx context.Context, props ...func(request *availability.HeartbeatRequest)) (*availability.HeartbeatResponse, error)
 	// Updates the CSMS with the current log upload status.
-	LogStatusNotification(status diagnostics.UploadLogStatus, requestID int, props ...func(request *diagnostics.LogStatusNotificationRequest)) (*diagnostics.LogStatusNotificationResponse, error)
+	LogStatusNotification(ctx context.Context, status diagnostics.UploadLogStatus, requestID int, props ...func(request *diagnostics.LogStatusNotificationRequest)) (*diagnostics.LogStatusNotificationResponse, error)
 	// Sends electrical meter values, not related to a transaction, to the CSMS. This message is deprecated and will be replaced by Device Management Monitoring events.
-	MeterValues(evseID int, meterValues []types.MeterValue, props ...func(request *meter.MeterValuesRequest)) (*meter.MeterValuesResponse, error)
+	MeterValues(ctx context.Context, evseID int, meterValues []types.MeterValue, props ...func(request *meter.MeterValuesRequest)) (*meter.MeterValuesResponse, error)
 	// Informs the CSMS of a charging schedule or charging limit imposed by an External Control System on the Charging Station with ongoing transaction(s).
-	NotifyChargingLimit(chargingLimit smartcharging.ChargingLimit, props ...func(request *smartcharging.NotifyChargingLimitRequest)) (*smartcharging.NotifyChargingLimitResponse, error)
+	NotifyChargingLimit(ctx context.Context, chargingLimit smartcharging.ChargingLimit, props ...func(request *smartcharging.NotifyChargingLimitRequest)) (*smartcharging.NotifyChargingLimitResponse, error)
 	// Notifies the CSMS with raw customer data, previously requested by the CSMS (see CustomerInformationFeature).
-	NotifyCustomerInformation(data string, seqNo int, generatedAt types.DateTime, requestID int, props ...func(request *diagnostics.NotifyCustomerInformationRequest)) (*diagnostics.NotifyCustomerInformationResponse, error)
+	NotifyCustomerInformation(ctx context.Context, data string, seqNo int, generatedAt types.DateTime, requestID int, props ...func(request *diagnostics.NotifyCustomerInformationRequest)) (*diagnostics.NotifyCustomerInformationResponse, error)
 	// Notifies the CSMS of the display messages currently configured on the Charging Station.
-	NotifyDisplayMessages(requestID int, props ...func(request *display.NotifyDisplayMessagesRequest)) (*display.NotifyDisplayMessagesResponse, error)
+	NotifyDisplayMessages(ctx context.Context, requestID int, props ...func(request *display.NotifyDisplayMessagesRequest)) (*display.NotifyDisplayMessagesResponse, error)
 	// Forwards the charging needs of an EV to the CSMS.
-	NotifyEVChargingNeeds(evseID int, chargingNeeds smartcharging.ChargingNeeds, props ...func(request *smartcharging.NotifyEVChargingNeedsRequest)) (*smartcharging.NotifyEVChargingNeedsResponse, error)
+	NotifyEVChargingNeeds(ctx context.Context, evseID int, chargingNeeds smartcharging.ChargingNeeds, props ...func(request *smartcharging.NotifyEVChargingNeedsRequest)) (*smartcharging.NotifyEVChargingNeedsResponse, error)
 	// Communicates the charging schedule as calculated by the EV to the CSMS.
-	NotifyEVChargingSchedule(timeBase *types.DateTime, evseID int, schedule types.ChargingSchedule, props ...func(request *smartcharging.NotifyEVChargingScheduleRequest)) (*smartcharging.NotifyEVChargingScheduleResponse, error)
+	NotifyEVChargingSchedule(ctx context.Context, timeBase *types.DateTime, evseID int, schedule types.ChargingSchedule, props ...func(request *smartcharging.NotifyEVChargingScheduleRequest)) (*smartcharging.NotifyEVChargingScheduleResponse, error)
 	// Notifies the CSMS about monitoring events.
-	NotifyEvent(generatedAt *types.DateTime, seqNo int, eventData []diagnostics.EventData, props ...func(request *diagnostics.NotifyEventRequest)) (*diagnostics.NotifyEventResponse, error)
+	NotifyEvent(ctx context.Context, generatedAt *types.DateTime, seqNo int, eventData []diagnostics.EventData, props ...func(request *diagnostics.NotifyEventRequest)) (*diagnostics.NotifyEventResponse, error)
 	// Sends a monitoring report to the CSMS, according to parameters specified in the GetMonitoringReport request, previously sent by the CSMS.
-	NotifyMonitoringReport(requestID int, seqNo int, generatedAt *types.DateTime, monitorData []diagnostics.MonitoringData, props ...func(request *diagnostics.NotifyMonitoringReportRequest)) (*diagnostics.NotifyMonitoringReportResponse, error)
+	NotifyMonitoringReport(ctx context.Context, requestID int, seqNo int, generatedAt *types.DateTime, monitorData []diagnostics.MonitoringData, props ...func(request *diagnostics.NotifyMonitoringReportRequest)) (*diagnostics.NotifyMonitoringReportResponse, error)
 	// Sends a base report to the CSMS, according to parameters specified in the GetBaseReport request, previously sent by the CSMS.
-	NotifyReport(requestID int, generatedAt *types.DateTime, seqNo int, props ...func(request *provisioning.NotifyReportRequest)) (*provisioning.NotifyReportResponse, error)
+	NotifyReport(ctx context.Context, requestID int, generatedAt *types.DateTime, seqNo int, props ...func(request *provisioning.NotifyReportRequest)) (*provisioning.NotifyReportResponse, error)
 	// Notifies the CSMS about the current progress of a PublishFirmware operation.
-	PublishFirmwareStatusNotification(status firmware.PublishFirmwareStatus, props ...func(request *firmware.PublishFirmwareStatusNotificationRequest)) (*firmware.PublishFirmwareStatusNotificationResponse, error)
+	PublishFirmwareStatusNotification(ctx context.Context, status firmware.PublishFirmwareStatus, props ...func(request *firmware.PublishFirmwareStatusNotificationRequest)) (*firmware.PublishFirmwareStatusNotificationResponse, error)
 	// Reports charging profiles installed in the Charging Station, as requested previously by the CSMS.
-	ReportChargingProfiles(requestID int, chargingLimitSource types.ChargingLimitSourceType, evseID int, chargingProfile []types.ChargingProfile, props ...func(request *smartcharging.ReportChargingProfilesRequest)) (*smartcharging.ReportChargingProfilesResponse, error)
+	ReportChargingProfiles(ctx context.Context, requestID int, chargingLimitSource types.ChargingLimitSourceType, evseID int, chargingProfile []types.ChargingProfile, props ...func(request *smartcharging.ReportChargingProfilesRequest)) (*smartcharging.ReportChargingProfilesResponse, error)
 	// Notifies the CSMS about a reservation status having changed (i.e. the reservation has expired)
-	ReservationStatusUpdate(reservationID int, status reservation.ReservationUpdateStatus, props ...func(request *reservation.ReservationStatusUpdateRequest)) (*reservation.ReservationStatusUpdateResponse, error)
+	ReservationStatusUpdate(ctx context.Context, reservationID int, status reservation.ReservationUpdateStatus, props ...func(request *reservation.ReservationStatusUpdateRequest)) (*reservation.ReservationStatusUpdateResponse, error)
 	// Informs the CSMS about critical security events.
-	SecurityEventNotification(typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error)
+	SecurityEventNotification(ctx context.Context, typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error)
 	// Requests the CSMS to issue a new certificate.
-	SignCertificate(csr string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error)
+	SignCertificate(ctx context.Context, csr string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error)
 	// Informs the CSMS about a connector status change.
-	StatusNotification(timestamp *types.DateTime, status availability.ConnectorStatus, evseID int, connectorID int, props ...func(request *availability.StatusNotificationRequest)) (*availability.StatusNotificationResponse, error)
+	StatusNotification(ctx context.Context, timestamp *types.DateTime, status availability.ConnectorStatus, evseID int, connectorID int, props ...func(request *availability.StatusNotificationRequest)) (*availability.StatusNotificationResponse, error)
 	// Sends information to the CSMS about a transaction, used for billing purposes.
-	TransactionEvent(t transactions.TransactionEvent, timestamp *types.DateTime, reason transactions.TriggerReason, seqNo int, info transactions.Transaction, props ...func(request *transactions.TransactionEventRequest)) (*transactions.TransactionEventResponse, error)
+	TransactionEvent(ctx context.Context, t transactions.TransactionEvent, timestamp *types.DateTime, reason transactions.TriggerReason, seqNo int, info transactions.Transaction, props ...func(request *transactions.TransactionEventRequest)) (*transactions.TransactionEventResponse, error)
 	// Registers a handler for incoming security profile messages
 	SetSecurityHandler(handler security.ChargingStationHandler)
 	// Registers a handler for incoming provisioning profile messages
@@ -150,7 +151,7 @@ type ChargingStation interface {
 	// In case of network issues (i.e. the remote host couldn't be reached), the function also returns an error.
 	//
 	// The request is synchronous blocking.
-	SendRequest(request ocpp.Request) (ocpp.Response, error)
+	SendRequest(ctx context.Context, request ocpp.Request) (ocpp.Response, error)
 	// Sends an asynchronous request to the CSMS.
 	// The CSMS will respond with a confirmation message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.

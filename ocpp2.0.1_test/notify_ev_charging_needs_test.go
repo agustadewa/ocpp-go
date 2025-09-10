@@ -148,7 +148,7 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingNeedsE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.NotifyEVChargingNeeds(evseID, chargingNeeds, func(request *smartcharging.NotifyEVChargingNeedsRequest) {
+	response, err := suite.chargingStation.NotifyEVChargingNeeds(nil, evseID, chargingNeeds, func(request *smartcharging.NotifyEVChargingNeedsRequest) {
 		request.MaxScheduleTuples = maxScheduleTuples
 	})
 	require.Nil(t, err)

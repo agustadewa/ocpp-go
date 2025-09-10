@@ -1,6 +1,8 @@
 package ocpp2
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -71,12 +73,12 @@ func (cs *chargingStation) onRequestTimeout(_ string, _ ocpp.Request, err *ocpp.
 	cs.errorHandler <- err
 }
 
-func (cs *chargingStation) BootNotification(reason provisioning.BootReason, model string, vendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationResponse, error) {
-	request := provisioning.NewBootNotificationRequest(reason, model, vendor)
+func (cs *chargingStation) BootNotification(ctx context.Context, reason provisioning.BootReason, model string, chargePointVendor string, props ...func(request *provisioning.BootNotificationRequest)) (*provisioning.BootNotificationResponse, error) {
+	request := provisioning.NewBootNotificationRequest(reason, model, chargePointVendor)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -84,12 +86,12 @@ func (cs *chargingStation) BootNotification(reason provisioning.BootReason, mode
 	}
 }
 
-func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeResponse, error) {
+func (cs *chargingStation) Authorize(ctx context.Context, idToken string, tokenType types.IdTokenType, props ...func(request *authorization.AuthorizeRequest)) (*authorization.AuthorizeResponse, error) {
 	request := authorization.NewAuthorizationRequest(idToken, tokenType)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -97,12 +99,12 @@ func (cs *chargingStation) Authorize(idToken string, tokenType types.IdTokenType
 	}
 }
 
-func (cs *chargingStation) ClearedChargingLimit(chargingLimitSource types.ChargingLimitSourceType, props ...func(request *smartcharging.ClearedChargingLimitRequest)) (*smartcharging.ClearedChargingLimitResponse, error) {
+func (cs *chargingStation) ClearedChargingLimit(ctx context.Context, chargingLimitSource types.ChargingLimitSourceType, props ...func(request *smartcharging.ClearedChargingLimitRequest)) (*smartcharging.ClearedChargingLimitResponse, error) {
 	request := smartcharging.NewClearedChargingLimitRequest(chargingLimitSource)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -110,12 +112,12 @@ func (cs *chargingStation) ClearedChargingLimit(chargingLimitSource types.Chargi
 	}
 }
 
-func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *data.DataTransferRequest)) (*data.DataTransferResponse, error) {
+func (cs *chargingStation) DataTransfer(ctx context.Context, vendorId string, props ...func(request *data.DataTransferRequest)) (*data.DataTransferResponse, error) {
 	request := data.NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -123,12 +125,12 @@ func (cs *chargingStation) DataTransfer(vendorId string, props ...func(request *
 	}
 }
 
-func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationResponse, error) {
+func (cs *chargingStation) FirmwareStatusNotification(ctx context.Context, status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationResponse, error) {
 	request := firmware.NewFirmwareStatusNotificationRequest(status)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -136,12 +138,12 @@ func (cs *chargingStation) FirmwareStatusNotification(status firmware.FirmwareSt
 	}
 }
 
-func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, action iso15118.CertificateAction, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateResponse, error) {
+func (cs *chargingStation) Get15118EVCertificate(ctx context.Context, schemaVersion string, action iso15118.CertificateAction, exiRequest string, props ...func(request *iso15118.Get15118EVCertificateRequest)) (*iso15118.Get15118EVCertificateResponse, error) {
 	request := iso15118.NewGet15118EVCertificateRequest(schemaVersion, action, exiRequest)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -149,12 +151,12 @@ func (cs *chargingStation) Get15118EVCertificate(schemaVersion string, action is
 	}
 }
 
-func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPRequestDataType, props ...func(request *iso15118.GetCertificateStatusRequest)) (*iso15118.GetCertificateStatusResponse, error) {
+func (cs *chargingStation) GetCertificateStatus(ctx context.Context, ocspRequestData types.OCSPRequestDataType, props ...func(request *iso15118.GetCertificateStatusRequest)) (*iso15118.GetCertificateStatusResponse, error) {
 	request := iso15118.NewGetCertificateStatusRequest(ocspRequestData)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -162,12 +164,12 @@ func (cs *chargingStation) GetCertificateStatus(ocspRequestData types.OCSPReques
 	}
 }
 
-func (cs *chargingStation) Heartbeat(props ...func(request *availability.HeartbeatRequest)) (*availability.HeartbeatResponse, error) {
+func (cs *chargingStation) Heartbeat(ctx context.Context, props ...func(request *availability.HeartbeatRequest)) (*availability.HeartbeatResponse, error) {
 	request := availability.NewHeartbeatRequest()
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -175,12 +177,12 @@ func (cs *chargingStation) Heartbeat(props ...func(request *availability.Heartbe
 	}
 }
 
-func (cs *chargingStation) LogStatusNotification(status diagnostics.UploadLogStatus, requestID int, props ...func(request *diagnostics.LogStatusNotificationRequest)) (*diagnostics.LogStatusNotificationResponse, error) {
+func (cs *chargingStation) LogStatusNotification(ctx context.Context, status diagnostics.UploadLogStatus, requestID int, props ...func(request *diagnostics.LogStatusNotificationRequest)) (*diagnostics.LogStatusNotificationResponse, error) {
 	request := diagnostics.NewLogStatusNotificationRequest(status, requestID)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -188,12 +190,12 @@ func (cs *chargingStation) LogStatusNotification(status diagnostics.UploadLogSta
 	}
 }
 
-func (cs *chargingStation) MeterValues(evseID int, meterValues []types.MeterValue, props ...func(request *meter.MeterValuesRequest)) (*meter.MeterValuesResponse, error) {
+func (cs *chargingStation) MeterValues(ctx context.Context, evseID int, meterValues []types.MeterValue, props ...func(request *meter.MeterValuesRequest)) (*meter.MeterValuesResponse, error) {
 	request := meter.NewMeterValuesRequest(evseID, meterValues)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -201,12 +203,12 @@ func (cs *chargingStation) MeterValues(evseID int, meterValues []types.MeterValu
 	}
 }
 
-func (cs *chargingStation) NotifyChargingLimit(chargingLimit smartcharging.ChargingLimit, props ...func(request *smartcharging.NotifyChargingLimitRequest)) (*smartcharging.NotifyChargingLimitResponse, error) {
+func (cs *chargingStation) NotifyChargingLimit(ctx context.Context, chargingLimit smartcharging.ChargingLimit, props ...func(request *smartcharging.NotifyChargingLimitRequest)) (*smartcharging.NotifyChargingLimitResponse, error) {
 	request := smartcharging.NewNotifyChargingLimitRequest(chargingLimit)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -214,12 +216,12 @@ func (cs *chargingStation) NotifyChargingLimit(chargingLimit smartcharging.Charg
 	}
 }
 
-func (cs *chargingStation) NotifyCustomerInformation(data string, seqNo int, generatedAt types.DateTime, requestID int, props ...func(request *diagnostics.NotifyCustomerInformationRequest)) (*diagnostics.NotifyCustomerInformationResponse, error) {
+func (cs *chargingStation) NotifyCustomerInformation(ctx context.Context, data string, seqNo int, generatedAt types.DateTime, requestID int, props ...func(request *diagnostics.NotifyCustomerInformationRequest)) (*diagnostics.NotifyCustomerInformationResponse, error) {
 	request := diagnostics.NewNotifyCustomerInformationRequest(data, seqNo, generatedAt, requestID)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -227,12 +229,12 @@ func (cs *chargingStation) NotifyCustomerInformation(data string, seqNo int, gen
 	}
 }
 
-func (cs *chargingStation) NotifyDisplayMessages(requestID int, props ...func(request *display.NotifyDisplayMessagesRequest)) (*display.NotifyDisplayMessagesResponse, error) {
+func (cs *chargingStation) NotifyDisplayMessages(ctx context.Context, requestID int, props ...func(request *display.NotifyDisplayMessagesRequest)) (*display.NotifyDisplayMessagesResponse, error) {
 	request := display.NewNotifyDisplayMessagesRequest(requestID)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -240,12 +242,12 @@ func (cs *chargingStation) NotifyDisplayMessages(requestID int, props ...func(re
 	}
 }
 
-func (cs *chargingStation) NotifyEVChargingNeeds(evseID int, chargingNeeds smartcharging.ChargingNeeds, props ...func(request *smartcharging.NotifyEVChargingNeedsRequest)) (*smartcharging.NotifyEVChargingNeedsResponse, error) {
+func (cs *chargingStation) NotifyEVChargingNeeds(ctx context.Context, evseID int, chargingNeeds smartcharging.ChargingNeeds, props ...func(request *smartcharging.NotifyEVChargingNeedsRequest)) (*smartcharging.NotifyEVChargingNeedsResponse, error) {
 	request := smartcharging.NewNotifyEVChargingNeedsRequest(evseID, chargingNeeds)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -253,12 +255,12 @@ func (cs *chargingStation) NotifyEVChargingNeeds(evseID int, chargingNeeds smart
 	}
 }
 
-func (cs *chargingStation) NotifyEVChargingSchedule(timeBase *types.DateTime, evseID int, schedule types.ChargingSchedule, props ...func(request *smartcharging.NotifyEVChargingScheduleRequest)) (*smartcharging.NotifyEVChargingScheduleResponse, error) {
+func (cs *chargingStation) NotifyEVChargingSchedule(ctx context.Context, timeBase *types.DateTime, evseID int, schedule types.ChargingSchedule, props ...func(request *smartcharging.NotifyEVChargingScheduleRequest)) (*smartcharging.NotifyEVChargingScheduleResponse, error) {
 	request := smartcharging.NewNotifyEVChargingScheduleRequest(timeBase, evseID, schedule)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -266,12 +268,12 @@ func (cs *chargingStation) NotifyEVChargingSchedule(timeBase *types.DateTime, ev
 	}
 }
 
-func (cs *chargingStation) NotifyEvent(generatedAt *types.DateTime, seqNo int, eventData []diagnostics.EventData, props ...func(request *diagnostics.NotifyEventRequest)) (*diagnostics.NotifyEventResponse, error) {
+func (cs *chargingStation) NotifyEvent(ctx context.Context, generatedAt *types.DateTime, seqNo int, eventData []diagnostics.EventData, props ...func(request *diagnostics.NotifyEventRequest)) (*diagnostics.NotifyEventResponse, error) {
 	request := diagnostics.NewNotifyEventRequest(generatedAt, seqNo, eventData)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -279,12 +281,12 @@ func (cs *chargingStation) NotifyEvent(generatedAt *types.DateTime, seqNo int, e
 	}
 }
 
-func (cs *chargingStation) NotifyMonitoringReport(requestID int, seqNo int, generatedAt *types.DateTime, monitorData []diagnostics.MonitoringData, props ...func(request *diagnostics.NotifyMonitoringReportRequest)) (*diagnostics.NotifyMonitoringReportResponse, error) {
+func (cs *chargingStation) NotifyMonitoringReport(ctx context.Context, requestID int, seqNo int, generatedAt *types.DateTime, monitorData []diagnostics.MonitoringData, props ...func(request *diagnostics.NotifyMonitoringReportRequest)) (*diagnostics.NotifyMonitoringReportResponse, error) {
 	request := diagnostics.NewNotifyMonitoringReportRequest(requestID, seqNo, generatedAt, monitorData)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -292,12 +294,12 @@ func (cs *chargingStation) NotifyMonitoringReport(requestID int, seqNo int, gene
 	}
 }
 
-func (cs *chargingStation) NotifyReport(requestID int, generatedAt *types.DateTime, seqNo int, props ...func(request *provisioning.NotifyReportRequest)) (*provisioning.NotifyReportResponse, error) {
+func (cs *chargingStation) NotifyReport(ctx context.Context, requestID int, generatedAt *types.DateTime, seqNo int, props ...func(request *provisioning.NotifyReportRequest)) (*provisioning.NotifyReportResponse, error) {
 	request := provisioning.NewNotifyReportRequest(requestID, generatedAt, seqNo)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -305,12 +307,12 @@ func (cs *chargingStation) NotifyReport(requestID int, generatedAt *types.DateTi
 	}
 }
 
-func (cs *chargingStation) PublishFirmwareStatusNotification(status firmware.PublishFirmwareStatus, props ...func(request *firmware.PublishFirmwareStatusNotificationRequest)) (*firmware.PublishFirmwareStatusNotificationResponse, error) {
+func (cs *chargingStation) PublishFirmwareStatusNotification(ctx context.Context, status firmware.PublishFirmwareStatus, props ...func(request *firmware.PublishFirmwareStatusNotificationRequest)) (*firmware.PublishFirmwareStatusNotificationResponse, error) {
 	request := firmware.NewPublishFirmwareStatusNotificationRequest(status)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -318,12 +320,12 @@ func (cs *chargingStation) PublishFirmwareStatusNotification(status firmware.Pub
 	}
 }
 
-func (cs *chargingStation) ReportChargingProfiles(requestID int, chargingLimitSource types.ChargingLimitSourceType, evseID int, chargingProfile []types.ChargingProfile, props ...func(request *smartcharging.ReportChargingProfilesRequest)) (*smartcharging.ReportChargingProfilesResponse, error) {
+func (cs *chargingStation) ReportChargingProfiles(ctx context.Context, requestID int, chargingLimitSource types.ChargingLimitSourceType, evseID int, chargingProfile []types.ChargingProfile, props ...func(request *smartcharging.ReportChargingProfilesRequest)) (*smartcharging.ReportChargingProfilesResponse, error) {
 	request := smartcharging.NewReportChargingProfilesRequest(requestID, chargingLimitSource, evseID, chargingProfile)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -331,12 +333,12 @@ func (cs *chargingStation) ReportChargingProfiles(requestID int, chargingLimitSo
 	}
 }
 
-func (cs *chargingStation) ReservationStatusUpdate(reservationID int, status reservation.ReservationUpdateStatus, props ...func(request *reservation.ReservationStatusUpdateRequest)) (*reservation.ReservationStatusUpdateResponse, error) {
+func (cs *chargingStation) ReservationStatusUpdate(ctx context.Context, reservationID int, status reservation.ReservationUpdateStatus, props ...func(request *reservation.ReservationStatusUpdateRequest)) (*reservation.ReservationStatusUpdateResponse, error) {
 	request := reservation.NewReservationStatusUpdateRequest(reservationID, status)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -344,12 +346,12 @@ func (cs *chargingStation) ReservationStatusUpdate(reservationID int, status res
 	}
 }
 
-func (cs *chargingStation) SecurityEventNotification(typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error) {
+func (cs *chargingStation) SecurityEventNotification(ctx context.Context, typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error) {
 	request := security.NewSecurityEventNotificationRequest(typ, timestamp)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -357,12 +359,12 @@ func (cs *chargingStation) SecurityEventNotification(typ string, timestamp *type
 	}
 }
 
-func (cs *chargingStation) SignCertificate(csr string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error) {
+func (cs *chargingStation) SignCertificate(ctx context.Context, csr string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error) {
 	request := security.NewSignCertificateRequest(csr)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -370,12 +372,12 @@ func (cs *chargingStation) SignCertificate(csr string, props ...func(request *se
 	}
 }
 
-func (cs *chargingStation) StatusNotification(timestamp *types.DateTime, status availability.ConnectorStatus, evseID int, connectorID int, props ...func(request *availability.StatusNotificationRequest)) (*availability.StatusNotificationResponse, error) {
+func (cs *chargingStation) StatusNotification(ctx context.Context, timestamp *types.DateTime, status availability.ConnectorStatus, evseID int, connectorID int, props ...func(request *availability.StatusNotificationRequest)) (*availability.StatusNotificationResponse, error) {
 	request := availability.NewStatusNotificationRequest(timestamp, status, evseID, connectorID)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -383,12 +385,12 @@ func (cs *chargingStation) StatusNotification(timestamp *types.DateTime, status 
 	}
 }
 
-func (cs *chargingStation) TransactionEvent(t transactions.TransactionEvent, timestamp *types.DateTime, reason transactions.TriggerReason, seqNo int, info transactions.Transaction, props ...func(request *transactions.TransactionEventRequest)) (*transactions.TransactionEventResponse, error) {
+func (cs *chargingStation) TransactionEvent(ctx context.Context, t transactions.TransactionEvent, timestamp *types.DateTime, reason transactions.TriggerReason, seqNo int, info transactions.Transaction, props ...func(request *transactions.TransactionEventRequest)) (*transactions.TransactionEventResponse, error) {
 	request := transactions.NewTransactionEventRequest(t, timestamp, reason, seqNo, info)
 	for _, fn := range props {
 		fn(request)
 	}
-	response, err := cs.SendRequest(request)
+	response, err := cs.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -460,7 +462,7 @@ func (cs *chargingStation) SetDataHandler(handler data.ChargingStationHandler) {
 	cs.dataHandler = handler
 }
 
-func (cs *chargingStation) SendRequest(request ocpp.Request) (ocpp.Response, error) {
+func (cs *chargingStation) SendRequest(ctx context.Context, request ocpp.Request) (ocpp.Response, error) {
 	featureName := request.GetFeatureName()
 	if _, found := cs.client.GetProfileForFeature(featureName); !found {
 		return nil, fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
@@ -558,10 +560,9 @@ func (cs *chargingStation) asyncCallbackHandler() {
 func (cs *chargingStation) sendResponse(response ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
-		if ocppError, ok := err.(*ocpp.Error); ok {
+		var ocppError *ocpp.Error
+		if errors.As(err, &ocppError) {
 			err = cs.client.SendError(requestId, ocppError.Code, ocppError.Description, nil)
-		} else {
-			err = cs.client.SendError(requestId, ocppj.InternalError, err.Error(), nil)
 		}
 		if err != nil {
 			// Error while sending an error. Will attempt to send a default error instead
@@ -717,85 +718,85 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 	var err error
 	switch action {
 	case reservation.CancelReservationFeatureName:
-		response, err = cs.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))
+		response, err = cs.reservationHandler.OnCancelReservation(nil, request.(*reservation.CancelReservationRequest))
 	case security.CertificateSignedFeatureName:
-		response, err = cs.securityHandler.OnCertificateSigned(request.(*security.CertificateSignedRequest))
+		response, err = cs.securityHandler.OnCertificateSigned(nil, request.(*security.CertificateSignedRequest))
 	case availability.ChangeAvailabilityFeatureName:
-		response, err = cs.availabilityHandler.OnChangeAvailability(request.(*availability.ChangeAvailabilityRequest))
+		response, err = cs.availabilityHandler.OnChangeAvailability(nil, request.(*availability.ChangeAvailabilityRequest))
 	case authorization.ClearCacheFeatureName:
-		response, err = cs.authorizationHandler.OnClearCache(request.(*authorization.ClearCacheRequest))
+		response, err = cs.authorizationHandler.OnClearCache(nil, request.(*authorization.ClearCacheRequest))
 	case smartcharging.ClearChargingProfileFeatureName:
-		response, err = cs.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
+		response, err = cs.smartChargingHandler.OnClearChargingProfile(nil, request.(*smartcharging.ClearChargingProfileRequest))
 	case display.ClearDisplayMessageFeatureName:
-		response, err = cs.displayHandler.OnClearDisplay(request.(*display.ClearDisplayRequest))
+		response, err = cs.displayHandler.OnClearDisplay(nil, request.(*display.ClearDisplayRequest))
 	case diagnostics.ClearVariableMonitoringFeatureName:
-		response, err = cs.diagnosticsHandler.OnClearVariableMonitoring(request.(*diagnostics.ClearVariableMonitoringRequest))
+		response, err = cs.diagnosticsHandler.OnClearVariableMonitoring(nil, request.(*diagnostics.ClearVariableMonitoringRequest))
 	case tariffcost.CostUpdatedFeatureName:
-		response, err = cs.tariffCostHandler.OnCostUpdated(request.(*tariffcost.CostUpdatedRequest))
+		response, err = cs.tariffCostHandler.OnCostUpdated(nil, request.(*tariffcost.CostUpdatedRequest))
 	case diagnostics.CustomerInformationFeatureName:
-		response, err = cs.diagnosticsHandler.OnCustomerInformation(request.(*diagnostics.CustomerInformationRequest))
+		response, err = cs.diagnosticsHandler.OnCustomerInformation(nil, request.(*diagnostics.CustomerInformationRequest))
 	case data.DataTransferFeatureName:
-		response, err = cs.dataHandler.OnDataTransfer(request.(*data.DataTransferRequest))
+		response, err = cs.dataHandler.OnDataTransfer(nil, request.(*data.DataTransferRequest))
 	case iso15118.DeleteCertificateFeatureName:
-		response, err = cs.iso15118Handler.OnDeleteCertificate(request.(*iso15118.DeleteCertificateRequest))
+		response, err = cs.iso15118Handler.OnDeleteCertificate(nil, request.(*iso15118.DeleteCertificateRequest))
 	case provisioning.GetBaseReportFeatureName:
-		response, err = cs.provisioningHandler.OnGetBaseReport(request.(*provisioning.GetBaseReportRequest))
+		response, err = cs.provisioningHandler.OnGetBaseReport(nil, request.(*provisioning.GetBaseReportRequest))
 	case smartcharging.GetChargingProfilesFeatureName:
-		response, err = cs.smartChargingHandler.OnGetChargingProfiles(request.(*smartcharging.GetChargingProfilesRequest))
+		response, err = cs.smartChargingHandler.OnGetChargingProfiles(nil, request.(*smartcharging.GetChargingProfilesRequest))
 	case smartcharging.GetCompositeScheduleFeatureName:
-		response, err = cs.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
+		response, err = cs.smartChargingHandler.OnGetCompositeSchedule(nil, request.(*smartcharging.GetCompositeScheduleRequest))
 	case display.GetDisplayMessagesFeatureName:
-		response, err = cs.displayHandler.OnGetDisplayMessages(request.(*display.GetDisplayMessagesRequest))
+		response, err = cs.displayHandler.OnGetDisplayMessages(nil, request.(*display.GetDisplayMessagesRequest))
 	case iso15118.GetInstalledCertificateIdsFeatureName:
-		response, err = cs.iso15118Handler.OnGetInstalledCertificateIds(request.(*iso15118.GetInstalledCertificateIdsRequest))
+		response, err = cs.iso15118Handler.OnGetInstalledCertificateIds(nil, request.(*iso15118.GetInstalledCertificateIdsRequest))
 	case localauth.GetLocalListVersionFeatureName:
-		response, err = cs.localAuthListHandler.OnGetLocalListVersion(request.(*localauth.GetLocalListVersionRequest))
+		response, err = cs.localAuthListHandler.OnGetLocalListVersion(nil, request.(*localauth.GetLocalListVersionRequest))
 	case diagnostics.GetLogFeatureName:
-		response, err = cs.diagnosticsHandler.OnGetLog(request.(*diagnostics.GetLogRequest))
+		response, err = cs.diagnosticsHandler.OnGetLog(nil, request.(*diagnostics.GetLogRequest))
 	case diagnostics.GetMonitoringReportFeatureName:
-		response, err = cs.diagnosticsHandler.OnGetMonitoringReport(request.(*diagnostics.GetMonitoringReportRequest))
+		response, err = cs.diagnosticsHandler.OnGetMonitoringReport(nil, request.(*diagnostics.GetMonitoringReportRequest))
 	case provisioning.GetReportFeatureName:
-		response, err = cs.provisioningHandler.OnGetReport(request.(*provisioning.GetReportRequest))
+		response, err = cs.provisioningHandler.OnGetReport(nil, request.(*provisioning.GetReportRequest))
 	case transactions.GetTransactionStatusFeatureName:
-		response, err = cs.transactionsHandler.OnGetTransactionStatus(request.(*transactions.GetTransactionStatusRequest))
+		response, err = cs.transactionsHandler.OnGetTransactionStatus(nil, request.(*transactions.GetTransactionStatusRequest))
 	case provisioning.GetVariablesFeatureName:
-		response, err = cs.provisioningHandler.OnGetVariables(request.(*provisioning.GetVariablesRequest))
+		response, err = cs.provisioningHandler.OnGetVariables(nil, request.(*provisioning.GetVariablesRequest))
 	case iso15118.InstallCertificateFeatureName:
-		response, err = cs.iso15118Handler.OnInstallCertificate(request.(*iso15118.InstallCertificateRequest))
+		response, err = cs.iso15118Handler.OnInstallCertificate(nil, request.(*iso15118.InstallCertificateRequest))
 	case firmware.PublishFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnPublishFirmware(request.(*firmware.PublishFirmwareRequest))
+		response, err = cs.firmwareHandler.OnPublishFirmware(nil, request.(*firmware.PublishFirmwareRequest))
 	case remotecontrol.RequestStartTransactionFeatureName:
-		response, err = cs.remoteControlHandler.OnRequestStartTransaction(request.(*remotecontrol.RequestStartTransactionRequest))
+		response, err = cs.remoteControlHandler.OnRequestStartTransaction(nil, request.(*remotecontrol.RequestStartTransactionRequest))
 	case remotecontrol.RequestStopTransactionFeatureName:
-		response, err = cs.remoteControlHandler.OnRequestStopTransaction(request.(*remotecontrol.RequestStopTransactionRequest))
+		response, err = cs.remoteControlHandler.OnRequestStopTransaction(nil, request.(*remotecontrol.RequestStopTransactionRequest))
 	case reservation.ReserveNowFeatureName:
-		response, err = cs.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
+		response, err = cs.reservationHandler.OnReserveNow(nil, request.(*reservation.ReserveNowRequest))
 	case provisioning.ResetFeatureName:
-		response, err = cs.provisioningHandler.OnReset(request.(*provisioning.ResetRequest))
+		response, err = cs.provisioningHandler.OnReset(nil, request.(*provisioning.ResetRequest))
 	case localauth.SendLocalListFeatureName:
-		response, err = cs.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
+		response, err = cs.localAuthListHandler.OnSendLocalList(nil, request.(*localauth.SendLocalListRequest))
 	case smartcharging.SetChargingProfileFeatureName:
-		response, err = cs.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
+		response, err = cs.smartChargingHandler.OnSetChargingProfile(nil, request.(*smartcharging.SetChargingProfileRequest))
 	case display.SetDisplayMessageFeatureName:
-		response, err = cs.displayHandler.OnSetDisplayMessage(request.(*display.SetDisplayMessageRequest))
+		response, err = cs.displayHandler.OnSetDisplayMessage(nil, request.(*display.SetDisplayMessageRequest))
 	case diagnostics.SetMonitoringBaseFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetMonitoringBase(request.(*diagnostics.SetMonitoringBaseRequest))
+		response, err = cs.diagnosticsHandler.OnSetMonitoringBase(nil, request.(*diagnostics.SetMonitoringBaseRequest))
 	case diagnostics.SetMonitoringLevelFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetMonitoringLevel(request.(*diagnostics.SetMonitoringLevelRequest))
+		response, err = cs.diagnosticsHandler.OnSetMonitoringLevel(nil, request.(*diagnostics.SetMonitoringLevelRequest))
 	case provisioning.SetNetworkProfileFeatureName:
-		response, err = cs.provisioningHandler.OnSetNetworkProfile(request.(*provisioning.SetNetworkProfileRequest))
+		response, err = cs.provisioningHandler.OnSetNetworkProfile(nil, request.(*provisioning.SetNetworkProfileRequest))
 	case diagnostics.SetVariableMonitoringFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetVariableMonitoring(request.(*diagnostics.SetVariableMonitoringRequest))
+		response, err = cs.diagnosticsHandler.OnSetVariableMonitoring(nil, request.(*diagnostics.SetVariableMonitoringRequest))
 	case provisioning.SetVariablesFeatureName:
-		response, err = cs.provisioningHandler.OnSetVariables(request.(*provisioning.SetVariablesRequest))
+		response, err = cs.provisioningHandler.OnSetVariables(nil, request.(*provisioning.SetVariablesRequest))
 	case remotecontrol.TriggerMessageFeatureName:
-		response, err = cs.remoteControlHandler.OnTriggerMessage(request.(*remotecontrol.TriggerMessageRequest))
+		response, err = cs.remoteControlHandler.OnTriggerMessage(nil, request.(*remotecontrol.TriggerMessageRequest))
 	case remotecontrol.UnlockConnectorFeatureName:
-		response, err = cs.remoteControlHandler.OnUnlockConnector(request.(*remotecontrol.UnlockConnectorRequest))
+		response, err = cs.remoteControlHandler.OnUnlockConnector(nil, request.(*remotecontrol.UnlockConnectorRequest))
 	case firmware.UnpublishFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnUnpublishFirmware(request.(*firmware.UnpublishFirmwareRequest))
+		response, err = cs.firmwareHandler.OnUnpublishFirmware(nil, request.(*firmware.UnpublishFirmwareRequest))
 	case firmware.UpdateFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
+		response, err = cs.firmwareHandler.OnUpdateFirmware(nil, request.(*firmware.UpdateFirmwareRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return

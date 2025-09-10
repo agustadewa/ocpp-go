@@ -2,6 +2,8 @@
 package smartcharging
 
 import (
+	"context"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 )
 
@@ -22,13 +24,13 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Smart charging profile.
 type ChargingStationHandler interface {
 	// OnClearChargingProfile is called on a charging station whenever a ClearChargingProfileRequest is received from the CSMS.
-	OnClearChargingProfile(request *ClearChargingProfileRequest) (response *ClearChargingProfileResponse, err error)
+	OnClearChargingProfile(ctx context.Context, request *ClearChargingProfileRequest) (response *ClearChargingProfileResponse, err error)
 	// OnGetChargingProfiles is called on a charging station whenever a GetChargingProfilesRequest is received from the CSMS.
-	OnGetChargingProfiles(request *GetChargingProfilesRequest) (response *GetChargingProfilesResponse, err error)
+	OnGetChargingProfiles(ctx context.Context, request *GetChargingProfilesRequest) (response *GetChargingProfilesResponse, err error)
 	// OnGetCompositeSchedule is called on a charging station whenever a GetCompositeScheduleRequest is received from the CSMS.
-	OnGetCompositeSchedule(request *GetCompositeScheduleRequest) (response *GetCompositeScheduleResponse, err error)
+	OnGetCompositeSchedule(ctx context.Context, request *GetCompositeScheduleRequest) (response *GetCompositeScheduleResponse, err error)
 	// OnSetChargingProfile is called on a charging station whenever a SetChargingProfileRequest is received from the CSMS.
-	OnSetChargingProfile(request *SetChargingProfileRequest) (response *SetChargingProfileResponse, err error)
+	OnSetChargingProfile(ctx context.Context, request *SetChargingProfileRequest) (response *SetChargingProfileResponse, err error)
 }
 
 const ProfileName = "SmartCharging"

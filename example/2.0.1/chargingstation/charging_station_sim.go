@@ -81,7 +81,7 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 		Type:    types.IdTokenTypeKeyCode,
 	}
 	// Boot
-	bootResp, err := chargingStation.BootNotification(provisioning.BootReasonPowerUp, "model1", "vendor1")
+	bootResp, err := chargingStation.BootNotification(nil, provisioning.BootReasonPowerUp, "model1", "vendor1")
 	checkError(err)
 	logDefault(bootResp.GetFeatureName()).Infof("status: %v, interval: %v, current time: %v", bootResp.Status, bootResp.Interval, bootResp.CurrentTime.String())
 	// Notify EVSE status
@@ -106,25 +106,25 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 		ChargingState: transactions.ChargingStateEVConnected,
 	}
 	evseReq := types.EVSE{ID: evseID, ConnectorID: &chargingConnector}
-	txEventResp, err := chargingStation.TransactionEvent(transactions.TransactionEventStarted, types.Now(), transactions.TriggerReasonCablePluggedIn, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+	txEventResp, err := chargingStation.TransactionEvent(nil, transactions.TransactionEventStarted, types.Now(), transactions.TriggerReasonCablePluggedIn, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 		request.Evse = &evseReq
 	})
 	checkError(err)
 	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v started", tx.TransactionID)
 	stateHandler.evse[evseID].currentTransaction = tx.TransactionID
 	// Authorize
-	authResp, err := chargingStation.Authorize(dummyClientIdToken.IdToken, types.IdTokenTypeKeyCode)
+	authResp, err := chargingStation.Authorize(nil, dummyClientIdToken.IdToken, types.IdTokenTypeKeyCode)
 	checkError(err)
 	logDefault(authResp.GetFeatureName()).Infof("status: %v %v", authResp.IdTokenInfo.Status, getExpiryDate(&authResp.IdTokenInfo))
 	// Update transaction with auth info
-	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonAuthorized, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+	txEventResp, err = chargingStation.TransactionEvent(nil, transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonAuthorized, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 		request.Evse = &evseReq
 		request.IDToken = &dummyClientIdToken
 	})
 	checkError(err)
 	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v updated", tx.TransactionID)
 	// Update transaction after energy offering starts
-	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonChargingStateChanged, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+	txEventResp, err = chargingStation.TransactionEvent(nil, transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonChargingStateChanged, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 		request.Evse = &evseReq
 		request.IDToken = &dummyClientIdToken
 	})
@@ -132,10 +132,10 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v updated", tx.TransactionID)
 	// Periodically send meter values
 	var sampleInterval time.Duration = 5
-	//sampleInterval, ok := stateHandler.configuration.getInt(MeterValueSampleInterval)
-	//if !ok {
+	// sampleInterval, ok := stateHandler.configuration.getInt(MeterValueSampleInterval)
+	// if !ok {
 	//	sampleInterval = 5
-	//}
+	// }
 	var sampledValue types.SampledValue
 	for i := 0; i < 5; i++ {
 		time.Sleep(time.Second * sampleInterval)
@@ -155,7 +155,7 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 			SampledValue: []types.SampledValue{sampledValue},
 		}
 		// Send meter values
-		txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonMeterValuePeriodic, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+		txEventResp, err = chargingStation.TransactionEvent(nil, transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonMeterValuePeriodic, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 			request.MeterValue = []types.MeterValue{meterValue}
 			request.IDToken = &dummyClientIdToken
 		})
@@ -170,7 +170,7 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 	sampledValue.Context = types.ReadingContextTransactionEnd
 	sampledValue.Value = stateHandler.meterValue
 	tx.StoppedReason = transactions.ReasonEVDisconnected
-	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventEnded, types.Now(), transactions.TriggerReasonEVCommunicationLost, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+	txEventResp, err = chargingStation.TransactionEvent(nil, transactions.TransactionEventEnded, types.Now(), transactions.TriggerReasonEVCommunicationLost, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 		request.Evse = &evseReq
 		request.IDToken = &dummyClientIdToken
 		request.MeterValue = []types.MeterValue{}

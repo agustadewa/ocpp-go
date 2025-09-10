@@ -79,7 +79,7 @@ func (suite *OcppV2TestSuite) TestBootNotificationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargingStation.BootNotification(reason, chargePointModel, chargePointVendor)
+	confirmation, err := suite.chargingStation.BootNotification(nil, reason, chargePointModel, chargePointVendor)
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
 	assert.Equal(t, registrationStatus, confirmation.Status)

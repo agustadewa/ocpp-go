@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 )
 
-func (handler *ChargingStationHandler) OnChangeAvailability(request *availability.ChangeAvailabilityRequest) (response *availability.ChangeAvailabilityResponse, err error) {
+func (handler *ChargingStationHandler) OnChangeAvailability(ctx context.Context, request *availability.ChangeAvailabilityRequest) (response *availability.ChangeAvailabilityResponse, err error) {
 	if request.Evse == nil {
 		// Changing availability for the entire charging station
 		handler.availability = request.OperationalStatus

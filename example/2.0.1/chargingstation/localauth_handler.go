@@ -1,13 +1,17 @@
 package main
 
-import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
+import (
+	"context"
 
-func (handler *ChargingStationHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (response *localauth.GetLocalListVersionResponse, err error) {
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
+)
+
+func (handler *ChargingStationHandler) OnGetLocalListVersion(ctx context.Context, request *localauth.GetLocalListVersionRequest) (response *localauth.GetLocalListVersionResponse, err error) {
 	logDefault(request.GetFeatureName()).Infof("returning current local list version: %v", handler.localAuthListVersion)
 	return localauth.NewGetLocalListVersionResponse(handler.localAuthListVersion), nil
 }
 
-func (handler *ChargingStationHandler) OnSendLocalList(request *localauth.SendLocalListRequest) (response *localauth.SendLocalListResponse, err error) {
+func (handler *ChargingStationHandler) OnSendLocalList(ctx context.Context, request *localauth.SendLocalListRequest) (response *localauth.SendLocalListResponse, err error) {
 	if request.VersionNumber <= handler.localAuthListVersion {
 		logDefault(request.GetFeatureName()).
 			Errorf("requested listVersion %v is lower/equal than the current list version %v", request.VersionNumber, handler.localAuthListVersion)

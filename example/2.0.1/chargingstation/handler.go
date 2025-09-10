@@ -107,7 +107,7 @@ func updateConnectorStatus(stateHandler *ChargingStationHandler, evseID int, con
 		conn.status = status
 		evse.connectors[connector] = conn
 		// Send asynchronous status update
-		response, err := chargingStation.StatusNotification(types.NewDateTime(time.Now()), status, evseID, connector)
+		response, err := chargingStation.StatusNotification(nil, types.NewDateTime(time.Now()), status, evseID, connector)
 		checkError(err)
 		logDefault(response.GetFeatureName()).Infof("status for evse %d - connector %d updated to: %v", evseID, connector, status)
 	}

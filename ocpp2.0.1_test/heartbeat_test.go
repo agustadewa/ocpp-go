@@ -53,7 +53,7 @@ func (suite *OcppV2TestSuite) TestHeartbeatE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
-	response, err := suite.chargingStation.Heartbeat()
+	response, err := suite.chargingStation.Heartbeat(nil)
 	assert.Nil(t, err)
 	assert.NotNil(t, response)
 	assertDateTimeEquality(t, currentTime, &response.CurrentTime)

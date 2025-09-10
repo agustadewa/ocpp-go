@@ -1,7 +1,11 @@
 // The firmware functional block contains OCPP 2.0 features that enable firmware updates on a charging station.
 package firmware
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import (
+	"context"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+)
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Firmware profile.
 type CSMSHandler interface {
@@ -14,11 +18,11 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Firmware profile.
 type ChargingStationHandler interface {
 	// OnPublishFirmware is called on a charging station whenever a PublishFirmwareRequest is received from the CSMS.
-	OnPublishFirmware(request *PublishFirmwareRequest) (response *PublishFirmwareResponse, err error)
+	OnPublishFirmware(ctx context.Context, request *PublishFirmwareRequest) (response *PublishFirmwareResponse, err error)
 	// OnUnpublishFirmware is called on a charging station whenever a UnpublishFirmwareRequest is received from the CSMS.
-	OnUnpublishFirmware(request *UnpublishFirmwareRequest) (response *UnpublishFirmwareResponse, err error)
+	OnUnpublishFirmware(ctx context.Context, request *UnpublishFirmwareRequest) (response *UnpublishFirmwareResponse, err error)
 	// OnUpdateFirmware is called on a charging station whenever a UpdateFirmwareRequest is received from the CSMS.
-	OnUpdateFirmware(request *UpdateFirmwareRequest) (response *UpdateFirmwareResponse, err error)
+	OnUpdateFirmware(ctx context.Context, request *UpdateFirmwareRequest) (response *UpdateFirmwareResponse, err error)
 }
 
 const ProfileName = "Firmware"

@@ -59,7 +59,7 @@ func (suite *OcppV2TestSuite) TestReservationStatusUpdateE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargingStation.ReservationStatusUpdate(reservationID, status)
+	confirmation, err := suite.chargingStation.ReservationStatusUpdate(nil, reservationID, status)
 	assert.Nil(t, err)
 	assert.NotNil(t, confirmation)
 }

@@ -10,13 +10,13 @@ import (
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Diagnostics profile.
 type CSMSHandler interface {
 	// OnLogStatusNotification is called on the CSMS whenever a LogStatusNotificationRequest is received from a Charging Station.
-	OnLogStatusNotification(chargingStationID string, request *LogStatusNotificationRequest) (response *LogStatusNotificationResponse, err error)
+	OnLogStatusNotification(ctx context.Context, chargingStationID string, request *LogStatusNotificationRequest) (response *LogStatusNotificationResponse, err error)
 	// OnNotifyCustomerInformation is called on the CSMS whenever a NotifyCustomerInformationRequest is received from a Charging Station.
-	OnNotifyCustomerInformation(chargingStationID string, request *NotifyCustomerInformationRequest) (response *NotifyCustomerInformationResponse, err error)
+	OnNotifyCustomerInformation(ctx context.Context, chargingStationID string, request *NotifyCustomerInformationRequest) (response *NotifyCustomerInformationResponse, err error)
 	// OnNotifyEvent is called on the CSMS whenever a NotifyEventRequest is received from a Charging Station.
-	OnNotifyEvent(chargingStationID string, request *NotifyEventRequest) (response *NotifyEventResponse, err error)
+	OnNotifyEvent(ctx context.Context, chargingStationID string, request *NotifyEventRequest) (response *NotifyEventResponse, err error)
 	// OnNotifyMonitoringReport is called on the CSMS whenever a NotifyMonitoringReportRequest is received from a Charging Station.
-	OnNotifyMonitoringReport(chargingStationID string, request *NotifyMonitoringReportRequest) (response *NotifyMonitoringReportResponse, err error)
+	OnNotifyMonitoringReport(ctx context.Context, chargingStationID string, request *NotifyMonitoringReportRequest) (response *NotifyMonitoringReportResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Diagnostics profile.

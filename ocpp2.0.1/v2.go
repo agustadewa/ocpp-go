@@ -157,7 +157,7 @@ type ChargingStation interface {
 	// This result is propagated via a callback, called asynchronously.
 	//
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never invoked.
-	SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
+	SendRequestAsync(ctx context.Context, request ocpp.Request, callback func(confirmation ocpp.Response, protoError error)) error
 	// Connects to the CSMS and starts the charging station routine.
 	// The function doesn't block and returns right away, after having attempted to open a connection to the CSMS.
 	// If the connection couldn't be opened, an error is returned.
@@ -270,85 +270,85 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) Cha
 // All messages are sent asynchronously and do not block the caller.
 type CSMS interface {
 	// Cancel a pending reservation, provided the reservationId, on a charging station.
-	CancelReservation(clientId string, callback func(*reservation.CancelReservationResponse, error), reservationId int, props ...func(*reservation.CancelReservationRequest)) error
+	CancelReservation(ctx context.Context, clientId string, callback func(*reservation.CancelReservationResponse, error), reservationId int, props ...func(*reservation.CancelReservationRequest)) error
 	// Installs a new certificate (chain), signed by the CA, on the charging station. This typically follows a SignCertificate message, initiated by the charging station.
-	CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), CertificateSigned string, props ...func(*security.CertificateSignedRequest)) error
+	CertificateSigned(ctx context.Context, clientId string, callback func(*security.CertificateSignedResponse, error), CertificateSigned string, props ...func(*security.CertificateSignedRequest)) error
 	// Instructs a charging station to change its availability to the desired operational status.
-	ChangeAvailability(clientId string, callback func(*availability.ChangeAvailabilityResponse, error), operationalStatus availability.OperationalStatus, props ...func(*availability.ChangeAvailabilityRequest)) error
+	ChangeAvailability(ctx context.Context, clientId string, callback func(*availability.ChangeAvailabilityResponse, error), operationalStatus availability.OperationalStatus, props ...func(*availability.ChangeAvailabilityRequest)) error
 	// Instructs a charging station to clear its current authorization cache. All authorization saved locally will be invalidated.
-	ClearCache(clientId string, callback func(*authorization.ClearCacheResponse, error), props ...func(*authorization.ClearCacheRequest)) error
+	ClearCache(ctx context.Context, clientId string, callback func(*authorization.ClearCacheResponse, error), props ...func(*authorization.ClearCacheRequest)) error
 	// Instructs a charging station to clear some or all charging profiles, previously sent to the charging station.
-	ClearChargingProfile(clientId string, callback func(*smartcharging.ClearChargingProfileResponse, error), props ...func(request *smartcharging.ClearChargingProfileRequest)) error
+	ClearChargingProfile(ctx context.Context, clientId string, callback func(*smartcharging.ClearChargingProfileResponse, error), props ...func(request *smartcharging.ClearChargingProfileRequest)) error
 	// Removes a specific display message, currently configured in a charging station.
-	ClearDisplay(clientId string, callback func(*display.ClearDisplayResponse, error), id int, props ...func(*display.ClearDisplayRequest)) error
+	ClearDisplay(ctx context.Context, clientId string, callback func(*display.ClearDisplayResponse, error), id int, props ...func(*display.ClearDisplayRequest)) error
 	// Removes one or more monitoring settings from a charging station for the given variable IDs.
-	ClearVariableMonitoring(clientId string, callback func(*diagnostics.ClearVariableMonitoringResponse, error), id []int, props ...func(*diagnostics.ClearVariableMonitoringRequest)) error
+	ClearVariableMonitoring(ctx context.Context, clientId string, callback func(*diagnostics.ClearVariableMonitoringResponse, error), id []int, props ...func(*diagnostics.ClearVariableMonitoringRequest)) error
 	// Instructs a charging station to display the updated current total cost of an ongoing transaction.
-	CostUpdated(clientId string, callback func(*tariffcost.CostUpdatedResponse, error), totalCost float64, transactionId string, props ...func(*tariffcost.CostUpdatedRequest)) error
+	CostUpdated(ctx context.Context, clientId string, callback func(*tariffcost.CostUpdatedResponse, error), totalCost float64, transactionId string, props ...func(*tariffcost.CostUpdatedRequest)) error
 	// Instructs a charging station to send one or more reports, containing raw customer information.
-	CustomerInformation(clientId string, callback func(*diagnostics.CustomerInformationResponse, error), requestId int, report bool, clear bool, props ...func(*diagnostics.CustomerInformationRequest)) error
+	CustomerInformation(ctx context.Context, clientId string, callback func(*diagnostics.CustomerInformationResponse, error), requestId int, report bool, clear bool, props ...func(*diagnostics.CustomerInformationRequest)) error
 	// Performs a custom data transfer to a charging station. The message payload is not pre-defined and must be supported by the charging station. Every vendor may implement their own proprietary logic for this message.
-	DataTransfer(clientId string, callback func(*data.DataTransferResponse, error), vendorId string, props ...func(*data.DataTransferRequest)) error
+	DataTransfer(ctx context.Context, clientId string, callback func(*data.DataTransferResponse, error), vendorId string, props ...func(*data.DataTransferRequest)) error
 	// Deletes a previously installed certificate on a charging station.
-	DeleteCertificate(clientId string, callback func(*iso15118.DeleteCertificateResponse, error), data types.CertificateHashData, props ...func(*iso15118.DeleteCertificateRequest)) error
+	DeleteCertificate(ctx context.Context, clientId string, callback func(*iso15118.DeleteCertificateResponse, error), data types.CertificateHashData, props ...func(*iso15118.DeleteCertificateRequest)) error
 	// Requests a report from a charging station. The charging station will asynchronously send the report in chunks using NotifyReportRequest messages.
-	GetBaseReport(clientId string, callback func(*provisioning.GetBaseReportResponse, error), requestId int, reportBase provisioning.ReportBaseType, props ...func(*provisioning.GetBaseReportRequest)) error
+	GetBaseReport(ctx context.Context, clientId string, callback func(*provisioning.GetBaseReportResponse, error), requestId int, reportBase provisioning.ReportBaseType, props ...func(*provisioning.GetBaseReportRequest)) error
 	// Request a charging station to report some or all installed charging profiles. The charging station will report these asynchronously using ReportChargingProfiles messages.
-	GetChargingProfiles(clientId string, callback func(*smartcharging.GetChargingProfilesResponse, error), chargingProfile smartcharging.ChargingProfileCriterion, props ...func(*smartcharging.GetChargingProfilesRequest)) error
+	GetChargingProfiles(ctx context.Context, clientId string, callback func(*smartcharging.GetChargingProfilesResponse, error), chargingProfile smartcharging.ChargingProfileCriterion, props ...func(*smartcharging.GetChargingProfilesRequest)) error
 	// Requests a charging station to report the composite charging schedule for the indicated duration and evseID.
-	GetCompositeSchedule(clientId string, callback func(*smartcharging.GetCompositeScheduleResponse, error), duration int, evseId int, props ...func(*smartcharging.GetCompositeScheduleRequest)) error
+	GetCompositeSchedule(ctx context.Context, clientId string, callback func(*smartcharging.GetCompositeScheduleResponse, error), duration int, evseId int, props ...func(*smartcharging.GetCompositeScheduleRequest)) error
 	// Retrieves all messages currently configured on a charging station.
-	GetDisplayMessages(clientId string, callback func(*display.GetDisplayMessagesResponse, error), requestId int, props ...func(*display.GetDisplayMessagesRequest)) error
+	GetDisplayMessages(ctx context.Context, clientId string, callback func(*display.GetDisplayMessagesResponse, error), requestId int, props ...func(*display.GetDisplayMessagesRequest)) error
 	// Retrieves all installed certificates on a charging station.
-	GetInstalledCertificateIds(clientId string, callback func(*iso15118.GetInstalledCertificateIdsResponse, error), props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error
+	GetInstalledCertificateIds(ctx context.Context, clientId string, callback func(*iso15118.GetInstalledCertificateIdsResponse, error), props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error
 	// Queries a charging station for version number of the Local Authorization List.
-	GetLocalListVersion(clientId string, callback func(*localauth.GetLocalListVersionResponse, error), props ...func(*localauth.GetLocalListVersionRequest)) error
+	GetLocalListVersion(ctx context.Context, clientId string, callback func(*localauth.GetLocalListVersionResponse, error), props ...func(*localauth.GetLocalListVersionRequest)) error
 	// Instructs a charging station to upload a diagnostics or security logfile to the CSMS.
-	GetLog(clientId string, callback func(*diagnostics.GetLogResponse, error), logType diagnostics.LogType, requestID int, logParameters diagnostics.LogParameters, props ...func(*diagnostics.GetLogRequest)) error
+	GetLog(ctx context.Context, clientId string, callback func(*diagnostics.GetLogResponse, error), logType diagnostics.LogType, requestID int, logParameters diagnostics.LogParameters, props ...func(*diagnostics.GetLogRequest)) error
 	// Requests a report about configured monitoring settings per component and variable from a charging station. The reports will be uploaded asynchronously using NotifyMonitoringReport messages.
-	GetMonitoringReport(clientId string, callback func(*diagnostics.GetMonitoringReportResponse, error), props ...func(*diagnostics.GetMonitoringReportRequest)) error
+	GetMonitoringReport(ctx context.Context, clientId string, callback func(*diagnostics.GetMonitoringReportResponse, error), props ...func(*diagnostics.GetMonitoringReportRequest)) error
 	// Requests a custom report about configured monitoring settings per criteria, component and variable from a charging station. The reports will be uploaded asynchronously using NotifyMonitoringReport messages.
-	GetReport(clientId string, callback func(*provisioning.GetReportResponse, error), props ...func(*provisioning.GetReportRequest)) error
+	GetReport(ctx context.Context, clientId string, callback func(*provisioning.GetReportResponse, error), props ...func(*provisioning.GetReportRequest)) error
 	// Asks a Charging Station whether it has transaction-related messages waiting to be delivered to the CSMS. When a transactionId is provided, only messages for a specific transaction are asked for.
-	GetTransactionStatus(clientId string, callback func(*transactions.GetTransactionStatusResponse, error), props ...func(*transactions.GetTransactionStatusRequest)) error
+	GetTransactionStatus(ctx context.Context, clientId string, callback func(*transactions.GetTransactionStatusResponse, error), props ...func(*transactions.GetTransactionStatusRequest)) error
 	// Retrieves from a Charging Station the value of an attribute for one or more Variable of one or more Components.
-	GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.GetVariableData, props ...func(*provisioning.GetVariablesRequest)) error
+	GetVariables(ctx context.Context, clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.GetVariableData, props ...func(*provisioning.GetVariablesRequest)) error
 	// Installs a new CA certificate on a Charging station.
-	InstallCertificate(clientId string, callback func(*iso15118.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(*iso15118.InstallCertificateRequest)) error
+	InstallCertificate(ctx context.Context, clientId string, callback func(*iso15118.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(*iso15118.InstallCertificateRequest)) error
 	// Publishes a firmware to a local controller, allowing charging stations to download the same firmware from the local controller directly.
-	PublishFirmware(clientId string, callback func(*firmware.PublishFirmwareResponse, error), location string, checksum string, requestID int, props ...func(request *firmware.PublishFirmwareRequest)) error
+	PublishFirmware(ctx context.Context, clientId string, callback func(*firmware.PublishFirmwareResponse, error), location string, checksum string, requestID int, props ...func(request *firmware.PublishFirmwareRequest)) error
 	// Remotely triggers a transaction to be started on a charging station.
-	RequestStartTransaction(clientId string, callback func(*remotecontrol.RequestStartTransactionResponse, error), remoteStartID int, IdToken types.IdToken, props ...func(request *remotecontrol.RequestStartTransactionRequest)) error
+	RequestStartTransaction(ctx context.Context, clientId string, callback func(*remotecontrol.RequestStartTransactionResponse, error), remoteStartID int, IdToken types.IdToken, props ...func(request *remotecontrol.RequestStartTransactionRequest)) error
 	// Remotely triggers an ongoing transaction to be stopped on a charging station.
-	RequestStopTransaction(clientId string, callback func(*remotecontrol.RequestStopTransactionResponse, error), transactionID string, props ...func(request *remotecontrol.RequestStopTransactionRequest)) error
+	RequestStopTransaction(ctx context.Context, clientId string, callback func(*remotecontrol.RequestStopTransactionResponse, error), transactionID string, props ...func(request *remotecontrol.RequestStopTransactionRequest)) error
 	// Attempts to reserve a connector for an EV, on a specific charging station.
-	ReserveNow(clientId string, callback func(*reservation.ReserveNowResponse, error), id int, expiryDateTime *types.DateTime, idToken types.IdToken, props ...func(request *reservation.ReserveNowRequest)) error
+	ReserveNow(ctx context.Context, clientId string, callback func(*reservation.ReserveNowResponse, error), id int, expiryDateTime *types.DateTime, idToken types.IdToken, props ...func(request *reservation.ReserveNowRequest)) error
 	// Instructs the Charging Station to reset itself.
-	Reset(clientId string, callback func(*provisioning.ResetResponse, error), t provisioning.ResetType, props ...func(request *provisioning.ResetRequest)) error
+	Reset(ctx context.Context, clientId string, callback func(*provisioning.ResetResponse, error), t provisioning.ResetType, props ...func(request *provisioning.ResetRequest)) error
 	// Sends a local authorization list to a charging station, which can be used for the authorization of idTokens.
-	SendLocalList(clientId string, callback func(*localauth.SendLocalListResponse, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error
+	SendLocalList(ctx context.Context, clientId string, callback func(*localauth.SendLocalListResponse, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error
 	// Sends a charging profile to a charging station, to influence the power/current drawn by EVs.
-	SetChargingProfile(clientId string, callback func(*smartcharging.SetChargingProfileResponse, error), evseID int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error
+	SetChargingProfile(ctx context.Context, clientId string, callback func(*smartcharging.SetChargingProfileResponse, error), evseID int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error
 	// Asks a charging station to configure a new display message, that should be displayed (in the future).
-	SetDisplayMessage(clientId string, callback func(*display.SetDisplayMessageResponse, error), message display.MessageInfo, props ...func(request *display.SetDisplayMessageRequest)) error
+	SetDisplayMessage(ctx context.Context, clientId string, callback func(*display.SetDisplayMessageResponse, error), message display.MessageInfo, props ...func(request *display.SetDisplayMessageRequest)) error
 	// Requests a charging station to activate a set of preconfigured monitoring settings, as denoted by the value of MonitoringBase.
-	SetMonitoringBase(clientId string, callback func(*diagnostics.SetMonitoringBaseResponse, error), monitoringBase diagnostics.MonitoringBase, props ...func(request *diagnostics.SetMonitoringBaseRequest)) error
+	SetMonitoringBase(ctx context.Context, clientId string, callback func(*diagnostics.SetMonitoringBaseResponse, error), monitoringBase diagnostics.MonitoringBase, props ...func(request *diagnostics.SetMonitoringBaseRequest)) error
 	// Restricts a Charging Station to reporting only monitoring events with a severity number lower than or equal to a certain severity.
-	SetMonitoringLevel(clientId string, callback func(*diagnostics.SetMonitoringLevelResponse, error), severity int, props ...func(request *diagnostics.SetMonitoringLevelRequest)) error
+	SetMonitoringLevel(ctx context.Context, clientId string, callback func(*diagnostics.SetMonitoringLevelResponse, error), severity int, props ...func(request *diagnostics.SetMonitoringLevelRequest)) error
 	// Updates the connection details on a Charging Station.
-	SetNetworkProfile(clientId string, callback func(*provisioning.SetNetworkProfileResponse, error), configurationSlot int, connectionData provisioning.NetworkConnectionProfile, props ...func(request *provisioning.SetNetworkProfileRequest)) error
+	SetNetworkProfile(ctx context.Context, clientId string, callback func(*provisioning.SetNetworkProfileResponse, error), configurationSlot int, connectionData provisioning.NetworkConnectionProfile, props ...func(request *provisioning.SetNetworkProfileRequest)) error
 	// Requests a Charging Station to set monitoring triggers on variables.
-	SetVariableMonitoring(clientId string, callback func(*diagnostics.SetVariableMonitoringResponse, error), data []diagnostics.SetMonitoringData, props ...func(request *diagnostics.SetVariableMonitoringRequest)) error
+	SetVariableMonitoring(ctx context.Context, clientId string, callback func(*diagnostics.SetVariableMonitoringResponse, error), data []diagnostics.SetMonitoringData, props ...func(request *diagnostics.SetVariableMonitoringRequest)) error
 	// Configures/changes the values of a set of variables on a charging station.
-	SetVariables(clientId string, callback func(*provisioning.SetVariablesResponse, error), data []provisioning.SetVariableData, props ...func(request *provisioning.SetVariablesRequest)) error
+	SetVariables(ctx context.Context, clientId string, callback func(*provisioning.SetVariablesResponse, error), data []provisioning.SetVariableData, props ...func(request *provisioning.SetVariablesRequest)) error
 	// Requests a Charging Station to send a charging station-initiated message.
-	TriggerMessage(clientId string, callback func(*remotecontrol.TriggerMessageResponse, error), requestedMessage remotecontrol.MessageTrigger, props ...func(request *remotecontrol.TriggerMessageRequest)) error
+	TriggerMessage(ctx context.Context, clientId string, callback func(*remotecontrol.TriggerMessageResponse, error), requestedMessage remotecontrol.MessageTrigger, props ...func(request *remotecontrol.TriggerMessageRequest)) error
 	// Instructs the Charging Station to unlock a connector, to help out an EV-driver.
-	UnlockConnector(clientId string, callback func(*remotecontrol.UnlockConnectorResponse, error), evseID int, connectorID int, props ...func(request *remotecontrol.UnlockConnectorRequest)) error
+	UnlockConnector(ctx context.Context, clientId string, callback func(*remotecontrol.UnlockConnectorResponse, error), evseID int, connectorID int, props ...func(request *remotecontrol.UnlockConnectorRequest)) error
 	// Instructs a Local Controller to stops serving a firmware update to connected Charging Stations.
-	UnpublishFirmware(clientId string, callback func(*firmware.UnpublishFirmwareResponse, error), checksum string, props ...func(request *firmware.UnpublishFirmwareRequest)) error
+	UnpublishFirmware(ctx context.Context, clientId string, callback func(*firmware.UnpublishFirmwareResponse, error), checksum string, props ...func(request *firmware.UnpublishFirmwareRequest)) error
 	// Instructs a Charging Station to download and install a firmware update.
-	UpdateFirmware(clientId string, callback func(*firmware.UpdateFirmwareResponse, error), requestID int, firmware firmware.Firmware, props ...func(request *firmware.UpdateFirmwareRequest)) error
+	UpdateFirmware(ctx context.Context, clientId string, callback func(*firmware.UpdateFirmwareResponse, error), requestID int, firmware firmware.Firmware, props ...func(request *firmware.UpdateFirmwareRequest)) error
 
 	// Registers a handler for incoming security profile messages.
 	SetSecurityHandler(handler security.CSMSHandler)
@@ -392,7 +392,7 @@ type CSMS interface {
 	// The charging station will respond with a confirmation message, or with an error if the request was invalid or could not be processed.
 	// This result is propagated via a callback, called asynchronously.
 	// In case of network issues (i.e. the remote host couldn't be reached), the function returns an error directly. In this case, the callback is never invoked.
-	SendRequestAsync(clientId string, request ocpp.Request, callback func(ocpp.Response, error)) error
+	SendRequestAsync(ctx context.Context, clientId string, request ocpp.Request, callback func(ocpp.Response, error)) error
 	// Starts running the CSMS on the specified port and URL.
 	// The central system runs as a daemon and handles incoming charge point connections and messages.
 
@@ -442,8 +442,8 @@ func NewCSMS(endpoint *ocppj.Server, server ws.Server) CSMS {
 		)
 	}
 	cs := newCSMS(endpoint)
-	cs.server.SetRequestHandler(func(client ws.Channel, request ocpp.Request, requestId string, action string) {
-		cs.handleIncomingRequest(client, request, requestId, action)
+	cs.server.SetRequestHandler(func(ctx context.Context, client ws.Channel, request ocpp.Request, requestId string, action string) {
+		cs.handleIncomingRequest(ctx, client, request, requestId, action)
 	})
 	cs.server.SetResponseHandler(func(client ws.Channel, response ocpp.Response, requestId string) {
 		cs.handleIncomingResponse(client, response, requestId)

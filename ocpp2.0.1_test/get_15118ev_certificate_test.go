@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -75,7 +76,7 @@ func (suite *OcppV2TestSuite) TestGet15118EVCertificateE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.Get15118EVCertificate(nil, schemaVersion, action, exiRequest)
+	response, err := suite.chargingStation.Get15118EVCertificate(context.Background(), schemaVersion, action, exiRequest)
 	require.Nil(t, err)
 	require.NotNil(t, response)
 	assert.Equal(t, status, response.Status)

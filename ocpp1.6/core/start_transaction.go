@@ -1,8 +1,9 @@
 package core
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 // -------------------- Start Transaction (CP -> CS) --------------------

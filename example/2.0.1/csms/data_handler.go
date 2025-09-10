@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/data"
 )
 
@@ -10,7 +12,7 @@ type DataSample struct {
 	SampleValue  float64 `json:"sample_value"`
 }
 
-func (c *CSMSHandler) OnDataTransfer(chargingStationID string, request *data.DataTransferRequest) (response *data.DataTransferResponse, err error) {
+func (c *CSMSHandler) OnDataTransfer(ctx context.Context, chargingStationID string, request *data.DataTransferRequest) (confirmation *data.DataTransferResponse, err error) {
 	var dataSample DataSample
 	err = json.Unmarshal(request.Data.([]byte), &dataSample)
 	if err != nil {

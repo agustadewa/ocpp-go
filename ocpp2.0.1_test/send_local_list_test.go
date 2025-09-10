@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
@@ -93,7 +94,7 @@ func (suite *OcppV2TestSuite) TestSendLocalListE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.SendLocalList(wsId, func(response *localauth.SendLocalListResponse, err error) {
+	err = suite.csms.SendLocalList(context.Background(), wsId, func(response *localauth.SendLocalListResponse, err error) {
 		assert.Nil(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, status, response.Status)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/localauth"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"go.opentelemetry.io/otel"
 )
 
 // ConnectorInfo contains some simple state about a single connector.
@@ -82,12 +84,18 @@ func getExpiryDate(info *types.IdTokenInfo) string {
 	return ""
 }
 
-func updateOperationalStatus(stateHandler *ChargingStationHandler, evseID int, status availability.OperationalStatus) {
+func updateOperationalStatus(ctx context.Context, stateHandler *ChargingStationHandler, evseID int, status availability.OperationalStatus) {
+	tracer := otel.Tracer("example")
+	ctx, span := tracer.Start(ctx, "updateOperationalStatus")
+	defer span.End()
+
 	if evseID == 0 {
 		stateHandler.availability = status
 		log.Infof("operational status for charging station updated to: %v", status)
 	} else if evse, ok := stateHandler.evse[evseID]; !ok {
-		log.Errorf("couldn't update operational status for invalid evse %d", evseID)
+		err := fmt.Errorf("couldn't update operational status for invalid evse %d", evseID)
+		log.Error(err)
+		span.RecordError(err)
 		return
 	} else {
 		evse.availability = status
@@ -95,19 +103,27 @@ func updateOperationalStatus(stateHandler *ChargingStationHandler, evseID int, s
 	}
 }
 
-func updateConnectorStatus(stateHandler *ChargingStationHandler, evseID int, connector int, status availability.ConnectorStatus) {
+func updateConnectorStatus(ctx context.Context, stateHandler *ChargingStationHandler, evseID int, connector int, status availability.ConnectorStatus) {
+	tracer := otel.Tracer("example")
+	ctx, span := tracer.Start(ctx, "updateConnectorStatus")
+	defer span.End()
+
 	if evse, ok := stateHandler.evse[evseID]; !ok {
-		log.Errorf("couldn't update connector status for invalid evse %d", evseID)
+		err := fmt.Errorf("couldn't update connector status for invalid evse %d", evseID)
+		log.Error(err)
+		span.RecordError(err)
 		return
 	} else if connector < 0 || connector > len(evse.connectors) {
-		log.Errorf("couldn't update status for evse %d with invalid connector %d", evseID, connector)
+		err := fmt.Errorf("couldn't update status for evse %d with invalid connector %d", evseID, connector)
+		log.Error(err)
+		span.RecordError(err)
 		return
 	} else {
 		conn := evse.connectors[connector]
 		conn.status = status
 		evse.connectors[connector] = conn
 		// Send asynchronous status update
-		response, err := chargingStation.StatusNotification(nil, types.NewDateTime(time.Now()), status, evseID, connector)
+		response, err := chargingStation.StatusNotification(context.Background(), types.NewDateTime(time.Now()), status, evseID, connector)
 		checkError(err)
 		logDefault(response.GetFeatureName()).Infof("status for evse %d - connector %d updated to: %v", evseID, connector, status)
 	}

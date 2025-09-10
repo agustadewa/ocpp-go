@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	certificates "github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockCertificatesChargePointHandler) EXPECT() *MockCertificatesChargePo
 }
 
 // OnDeleteCertificate provides a mock function with given fields: request
-func (_m *MockCertificatesChargePointHandler) OnDeleteCertificate(request *certificates.DeleteCertificateRequest) (*certificates.DeleteCertificateResponse, error) {
+func (_m *MockCertificatesChargePointHandler) OnDeleteCertificate(ctx context.Context, request *certificates.DeleteCertificateRequest) (*certificates.DeleteCertificateResponse, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -57,13 +59,13 @@ type MockCertificatesChargePointHandler_OnDeleteCertificate_Call struct {
 
 // OnDeleteCertificate is a helper method to define mock.On call
 //   - request *certificates.DeleteCertificateRequest
-func (_e *MockCertificatesChargePointHandler_Expecter) OnDeleteCertificate(request interface{}) *MockCertificatesChargePointHandler_OnDeleteCertificate_Call {
+func (_e *MockCertificatesChargePointHandler_Expecter) OnDeleteCertificate(ctx context.Context, request interface{}) *MockCertificatesChargePointHandler_OnDeleteCertificate_Call {
 	return &MockCertificatesChargePointHandler_OnDeleteCertificate_Call{Call: _e.mock.On("OnDeleteCertificate", request)}
 }
 
-func (_c *MockCertificatesChargePointHandler_OnDeleteCertificate_Call) Run(run func(request *certificates.DeleteCertificateRequest)) *MockCertificatesChargePointHandler_OnDeleteCertificate_Call {
+func (_c *MockCertificatesChargePointHandler_OnDeleteCertificate_Call) Run(run func(ctx context.Context, request *certificates.DeleteCertificateRequest)) *MockCertificatesChargePointHandler_OnDeleteCertificate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*certificates.DeleteCertificateRequest))
+		run(args[0].(context.Context), args[0].(*certificates.DeleteCertificateRequest))
 	})
 	return _c
 }
@@ -79,7 +81,7 @@ func (_c *MockCertificatesChargePointHandler_OnDeleteCertificate_Call) RunAndRet
 }
 
 // OnGetInstalledCertificateIds provides a mock function with given fields: request
-func (_m *MockCertificatesChargePointHandler) OnGetInstalledCertificateIds(request *certificates.GetInstalledCertificateIdsRequest) (*certificates.GetInstalledCertificateIdsResponse, error) {
+func (_m *MockCertificatesChargePointHandler) OnGetInstalledCertificateIds(ctx context.Context, request *certificates.GetInstalledCertificateIdsRequest) (*certificates.GetInstalledCertificateIdsResponse, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -115,7 +117,7 @@ type MockCertificatesChargePointHandler_OnGetInstalledCertificateIds_Call struct
 
 // OnGetInstalledCertificateIds is a helper method to define mock.On call
 //   - request *certificates.GetInstalledCertificateIdsRequest
-func (_e *MockCertificatesChargePointHandler_Expecter) OnGetInstalledCertificateIds(request interface{}) *MockCertificatesChargePointHandler_OnGetInstalledCertificateIds_Call {
+func (_e *MockCertificatesChargePointHandler_Expecter) OnGetInstalledCertificateIds(ctx context.Context, request interface{}) *MockCertificatesChargePointHandler_OnGetInstalledCertificateIds_Call {
 	return &MockCertificatesChargePointHandler_OnGetInstalledCertificateIds_Call{Call: _e.mock.On("OnGetInstalledCertificateIds", request)}
 }
 
@@ -137,7 +139,7 @@ func (_c *MockCertificatesChargePointHandler_OnGetInstalledCertificateIds_Call) 
 }
 
 // OnInstallCertificate provides a mock function with given fields: request
-func (_m *MockCertificatesChargePointHandler) OnInstallCertificate(request *certificates.InstallCertificateRequest) (*certificates.InstallCertificateResponse, error) {
+func (_m *MockCertificatesChargePointHandler) OnInstallCertificate(ctx context.Context, request *certificates.InstallCertificateRequest) (*certificates.InstallCertificateResponse, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -173,23 +175,23 @@ type MockCertificatesChargePointHandler_OnInstallCertificate_Call struct {
 
 // OnInstallCertificate is a helper method to define mock.On call
 //   - request *certificates.InstallCertificateRequest
-func (_e *MockCertificatesChargePointHandler_Expecter) OnInstallCertificate(request interface{}) *MockCertificatesChargePointHandler_OnInstallCertificate_Call {
+func (_e *MockCertificatesChargePointHandler_Expecter) OnInstallCertificate(ctx context.Context, request interface{}) *MockCertificatesChargePointHandler_OnInstallCertificate_Call {
 	return &MockCertificatesChargePointHandler_OnInstallCertificate_Call{Call: _e.mock.On("OnInstallCertificate", request)}
 }
 
-func (_c *MockCertificatesChargePointHandler_OnInstallCertificate_Call) Run(run func(request *certificates.InstallCertificateRequest)) *MockCertificatesChargePointHandler_OnInstallCertificate_Call {
+func (_c *MockCertificatesChargePointHandler_OnInstallCertificate_Call) Run(run func(ctx context.Context, request *certificates.InstallCertificateRequest)) *MockCertificatesChargePointHandler_OnInstallCertificate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*certificates.InstallCertificateRequest))
+		run(args[0].(context.Context), args[1].(*certificates.InstallCertificateRequest))
 	})
 	return _c
 }
 
-func (_c *MockCertificatesChargePointHandler_OnInstallCertificate_Call) Return(response *certificates.InstallCertificateResponse, err error) *MockCertificatesChargePointHandler_OnInstallCertificate_Call {
+func (_c *MockCertificatesChargePointHandler_OnInstallCertificate_Call) Return(ctx context.Context, response *certificates.InstallCertificateResponse, err error) *MockCertificatesChargePointHandler_OnInstallCertificate_Call {
 	_c.Call.Return(response, err)
 	return _c
 }
 
-func (_c *MockCertificatesChargePointHandler_OnInstallCertificate_Call) RunAndReturn(run func(*certificates.InstallCertificateRequest) (*certificates.InstallCertificateResponse, error)) *MockCertificatesChargePointHandler_OnInstallCertificate_Call {
+func (_c *MockCertificatesChargePointHandler_OnInstallCertificate_Call) RunAndReturn(run func(context.Context, *certificates.InstallCertificateRequest) (*certificates.InstallCertificateResponse, error)) *MockCertificatesChargePointHandler_OnInstallCertificate_Call {
 	_c.Call.Return(run)
 	return _c
 }

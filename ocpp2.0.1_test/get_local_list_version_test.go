@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -50,7 +51,7 @@ func (suite *OcppV2TestSuite) TestGetLocalListVersionE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetLocalListVersion(wsId, func(confirmation *localauth.GetLocalListVersionResponse, err error) {
+	err = suite.csms.GetLocalListVersion(context.Background(), wsId, func(confirmation *localauth.GetLocalListVersionResponse, err error) {
 		assert.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, listVersion, confirmation.VersionNumber)

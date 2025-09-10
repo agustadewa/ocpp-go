@@ -65,7 +65,7 @@ func (handler *ChargingStationHandler) OnTriggerMessage(ctx context.Context, req
 	case remotecontrol.MessageTriggerBootNotification:
 		// Boot Notification
 		go func() {
-			_, e := chargingStation.BootNotification(nil, provisioning.BootReasonTriggered, handler.model, handler.vendor)
+			_, e := chargingStation.BootNotification(context.Background(), provisioning.BootReasonTriggered, handler.model, handler.vendor)
 			checkError(e)
 			logDefault(provisioning.BootNotificationFeatureName).Info("boot notification completed")
 		}()
@@ -74,7 +74,7 @@ func (handler *ChargingStationHandler) OnTriggerMessage(ctx context.Context, req
 		// Log Status Notification
 		go func() {
 			reqID := rand.Int()
-			_, e := chargingStation.LogStatusNotification(nil, diagnostics.UploadLogStatusUploading, reqID)
+			_, e := chargingStation.LogStatusNotification(context.Background(), diagnostics.UploadLogStatusUploading, reqID)
 			checkError(e)
 			logDefault(diagnostics.LogStatusNotificationFeatureName).Info("diagnostics status notified")
 		}()
@@ -85,7 +85,7 @@ func (handler *ChargingStationHandler) OnTriggerMessage(ctx context.Context, req
 	case remotecontrol.MessageTriggerHeartbeat:
 		// Schedule heartbeat request
 		go func() {
-			resp, e := chargingStation.Heartbeat(nil)
+			resp, e := chargingStation.Heartbeat(context.Background())
 			checkError(e)
 			logDefault(availability.HeartbeatFeatureName).Infof("clock synchronized: %v", resp.CurrentTime.FormatTimestamp())
 		}()
@@ -115,7 +115,7 @@ func (handler *ChargingStationHandler) OnTriggerMessage(ctx context.Context, req
 			}
 			// Update asynchronously
 			go func() {
-				_, e := chargingStation.StatusNotification(nil, types.NewDateTime(time.Now()), connectorStatus, request.Evse.ID, *request.Evse.ConnectorID)
+				_, e := chargingStation.StatusNotification(context.Background(), types.NewDateTime(time.Now()), connectorStatus, request.Evse.ID, *request.Evse.ConnectorID)
 				checkError(e)
 				logDefault(availability.HeartbeatFeatureName).Infof("status for connector %v sent: %v", *request.Evse.ConnectorID, connectorStatus)
 			}()

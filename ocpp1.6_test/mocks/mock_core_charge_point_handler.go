@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	core "github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockCoreChargePointHandler) EXPECT() *MockCoreChargePointHandler_Expec
 }
 
 // OnChangeAvailability provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnChangeAvailability(request *core.ChangeAvailabilityRequest) (*core.ChangeAvailabilityConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnChangeAvailability(ctx context.Context, request *core.ChangeAvailabilityRequest) (*core.ChangeAvailabilityConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -79,7 +81,7 @@ func (_c *MockCoreChargePointHandler_OnChangeAvailability_Call) RunAndReturn(run
 }
 
 // OnChangeConfiguration provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (*core.ChangeConfigurationConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnChangeConfiguration(ctx context.Context, request *core.ChangeConfigurationRequest) (*core.ChangeConfigurationConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -137,7 +139,7 @@ func (_c *MockCoreChargePointHandler_OnChangeConfiguration_Call) RunAndReturn(ru
 }
 
 // OnClearCache provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnClearCache(request *core.ClearCacheRequest) (*core.ClearCacheConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnClearCache(ctx context.Context, request *core.ClearCacheRequest) (*core.ClearCacheConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -195,7 +197,7 @@ func (_c *MockCoreChargePointHandler_OnClearCache_Call) RunAndReturn(run func(*c
 }
 
 // OnDataTransfer provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnDataTransfer(request *core.DataTransferRequest) (*core.DataTransferConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnDataTransfer(ctx context.Context, request *core.DataTransferRequest) (*core.DataTransferConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -253,7 +255,7 @@ func (_c *MockCoreChargePointHandler_OnDataTransfer_Call) RunAndReturn(run func(
 }
 
 // OnGetConfiguration provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnGetConfiguration(request *core.GetConfigurationRequest) (*core.GetConfigurationConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnGetConfiguration(ctx context.Context, request *core.GetConfigurationRequest) (*core.GetConfigurationConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -311,7 +313,7 @@ func (_c *MockCoreChargePointHandler_OnGetConfiguration_Call) RunAndReturn(run f
 }
 
 // OnRemoteStartTransaction provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnRemoteStartTransaction(request *core.RemoteStartTransactionRequest) (*core.RemoteStartTransactionConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnRemoteStartTransaction(ctx context.Context, request *core.RemoteStartTransactionRequest) (*core.RemoteStartTransactionConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -369,7 +371,7 @@ func (_c *MockCoreChargePointHandler_OnRemoteStartTransaction_Call) RunAndReturn
 }
 
 // OnRemoteStopTransaction provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnRemoteStopTransaction(request *core.RemoteStopTransactionRequest) (*core.RemoteStopTransactionConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnRemoteStopTransaction(ctx context.Context, request *core.RemoteStopTransactionRequest) (*core.RemoteStopTransactionConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -427,7 +429,7 @@ func (_c *MockCoreChargePointHandler_OnRemoteStopTransaction_Call) RunAndReturn(
 }
 
 // OnReset provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnReset(request *core.ResetRequest) (*core.ResetConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnReset(ctx context.Context, request *core.ResetRequest) (*core.ResetConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -485,7 +487,7 @@ func (_c *MockCoreChargePointHandler_OnReset_Call) RunAndReturn(run func(*core.R
 }
 
 // OnUnlockConnector provides a mock function with given fields: request
-func (_m *MockCoreChargePointHandler) OnUnlockConnector(request *core.UnlockConnectorRequest) (*core.UnlockConnectorConfirmation, error) {
+func (_m *MockCoreChargePointHandler) OnUnlockConnector(ctx context.Context, request *core.UnlockConnectorRequest) (*core.UnlockConnectorConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -94,7 +95,7 @@ func (suite *OcppV2TestSuite) TestGetLogE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetLog(wsId, func(confirmation *diagnostics.GetLogResponse, err error) {
+	err = suite.csms.GetLog(context.Background(), wsId, func(confirmation *diagnostics.GetLogResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

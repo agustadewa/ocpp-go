@@ -10,9 +10,9 @@ import (
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Security profile.
 type CSMSHandler interface {
 	// OnSecurityEventNotification is called on the CSMS whenever a SecurityEventNotificationRequest is received from a charging station.
-	OnSecurityEventNotification(chargingStationID string, request *SecurityEventNotificationRequest) (response *SecurityEventNotificationResponse, err error)
+	OnSecurityEventNotification(ctx context.Context, chargingStationID string, request *SecurityEventNotificationRequest) (response *SecurityEventNotificationResponse, err error)
 	// OnSignCertificate is called on the CSMS whenever a SignCertificateRequest is received from a charging station.
-	OnSignCertificate(chargingStationID string, request *SignCertificateRequest) (response *SignCertificateResponse, err error)
+	OnSignCertificate(ctx context.Context, chargingStationID string, request *SignCertificateRequest) (response *SignCertificateResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Security profile.

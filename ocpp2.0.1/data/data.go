@@ -10,7 +10,7 @@ import (
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Data transfer profile.
 type CSMSHandler interface {
 	// OnDataTransfer is called on the CSMS whenever a DataTransferRequest is received from a charging station.
-	OnDataTransfer(chargingStationID string, request *DataTransferRequest) (confirmation *DataTransferResponse, err error)
+	OnDataTransfer(ctx context.Context, chargingStationID string, request *DataTransferRequest) (confirmation *DataTransferResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Data transfer profile.

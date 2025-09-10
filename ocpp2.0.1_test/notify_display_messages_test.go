@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -71,7 +72,7 @@ func (suite *OcppV2TestSuite) TestNotifyDisplayMessagesE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	r, err := suite.chargingStation.NotifyDisplayMessages(nil, requestID, func(request *display.NotifyDisplayMessagesRequest) {
+	r, err := suite.chargingStation.NotifyDisplayMessages(context.Background(), requestID, func(request *display.NotifyDisplayMessagesRequest) {
 		request.MessageInfo = []display.MessageInfo{messageInfo}
 	})
 	assert.Nil(t, err)

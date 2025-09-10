@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func (suite *OcppV2TestSuite) TestDeleteCertificateE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.DeleteCertificate(wsId, func(confirmation *iso15118.DeleteCertificateResponse, err error) {
+	err = suite.csms.DeleteCertificate(context.Background(), wsId, func(confirmation *iso15118.DeleteCertificateResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

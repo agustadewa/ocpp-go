@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -70,7 +71,7 @@ func (suite *OcppV2TestSuite) TestInstallCertificateE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.InstallCertificate(wsId, func(response *iso15118.InstallCertificateResponse, err error) {
+	err = suite.csms.InstallCertificate(context.Background(), wsId, func(response *iso15118.InstallCertificateResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, status, response.Status)

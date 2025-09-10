@@ -5,6 +5,7 @@
 package ws
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -13,6 +14,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/lorenzodonini/ocpp-go/logging"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -210,7 +213,7 @@ func NewDefaultWebSocketConfig(
 	}
 }
 
-type MessageHandler func(c Channel, data []byte) error
+type MessageHandler func(ctx context.Context, c Channel, data []byte) error
 type ConnectedHandler func(c Channel)
 type DisconnectedHandler func(c Channel, err error)
 type ErrorHandler func(c Channel, err error)
@@ -283,10 +286,28 @@ func (w *webSocket) IsConnected() bool {
 }
 
 func (w *webSocket) Write(data []byte) error {
-	return w.WriteManual(websocket.TextMessage, data)
+	return w.WriteWithContext(context.Background(), data)
+}
+
+func (w *webSocket) WriteWithContext(ctx context.Context, data []byte) error {
+	return w.WriteManualWithContext(ctx, websocket.TextMessage, data)
 }
 
 func (w *webSocket) WriteManual(messageTyp int, data []byte) error {
+	return w.WriteManualWithContext(context.Background(), messageTyp, data)
+}
+
+func (w *webSocket) WriteManualWithContext(ctx context.Context, messageTyp int, data []byte) error {
+	tracer := otel.Tracer("ocpp-go/ws")
+	ctx, span := tracer.Start(ctx, "websocket.write")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("websocket.id", w.id),
+		attribute.Int("message.type", messageTyp),
+		attribute.Int("message.size", len(data)),
+	)
+
 	msg := message{
 		typ:  messageTyp,
 		data: data,
@@ -294,7 +315,9 @@ func (w *webSocket) WriteManual(messageTyp int, data []byte) error {
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 	if w.connection == nil {
-		return fmt.Errorf("cannot write to closed connection %s", w.id)
+		err := fmt.Errorf("cannot write to closed connection %s", w.id)
+		span.RecordError(err)
+		return err
 	}
 	w.outQueue <- msg
 	return nil
@@ -428,7 +451,7 @@ func (w *webSocket) readPump() {
 
 		// Forward message to handler.
 		// Errors during the handling don't interrupt the websocket routine but will be reported.
-		err = w.onMessage(w, msg)
+		err = w.onMessage(context.Background(), w, msg)
 		if err != nil {
 			w.onError(w, err)
 		}

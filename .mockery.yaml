@@ -134,6 +134,11 @@ packages:
 
   github.com/lorenzodonini/ocpp-go/ws:
     interfaces:
-      WsClient:
-      WsServer:
+      Client:
+      Server:
       Channel:
+      CheckClientHandler:
+      ConnectedHandler:
+      DisconnectedHandler:
+      ErrorHandler:
+      MessageHandler:

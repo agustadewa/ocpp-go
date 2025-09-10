@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -85,7 +86,7 @@ func (suite *OcppV2TestSuite) TestAuthorizeE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.Authorize(nil, idToken.IdToken, idToken.Type, func(request *authorization.AuthorizeRequest) {
+	response, err := suite.chargingStation.Authorize(context.Background(), idToken.IdToken, idToken.Type, func(request *authorization.AuthorizeRequest) {
 		request.IdToken.AdditionalInfo = []types.AdditionalInfo{additionalInfo}
 		request.Certificate = certificate
 		request.CertificateHashData = []types.OCSPRequestDataType{certHashData}

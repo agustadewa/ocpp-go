@@ -72,7 +72,7 @@ func NewMockWebSocket(id string) MockWebSocket {
 type MockWebsocketServer struct {
 	mock.Mock
 	ws.Server
-	MessageHandler            func(ws ws.Channel, data []byte) error
+	MessageHandler            func(ctx context.Context, ws ws.Channel, data []byte) error
 	NewClientHandler          func(ws ws.Channel)
 	CheckClientHandler        ws.CheckClientHandler
 	DisconnectedClientHandler func(ws ws.Channel)
@@ -88,6 +88,11 @@ func (websocketServer *MockWebsocketServer) Stop() {
 
 func (websocketServer *MockWebsocketServer) Write(webSocketId string, data []byte) error {
 	args := websocketServer.MethodCalled("Write", webSocketId, data)
+	return args.Error(0)
+}
+
+func (websocketServer *MockWebsocketServer) WriteWithContext(ctx context.Context, webSocketId string, data []byte) error {
+	args := websocketServer.MethodCalled("WriteWithContext", ctx, webSocketId, data)
 	return args.Error(0)
 }
 
@@ -119,7 +124,7 @@ func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler ws.Che
 type MockWebsocketClient struct {
 	mock.Mock
 	ws.Client
-	MessageHandler      func(data []byte) error
+	MessageHandler      func(ctx context.Context, data []byte) error
 	ReconnectedHandler  func()
 	DisconnectedHandler func(err error)
 	errC                chan error
@@ -134,7 +139,7 @@ func (websocketClient *MockWebsocketClient) Stop() {
 	websocketClient.MethodCalled("Stop")
 }
 
-func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data []byte) error) {
+func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(ctx context.Context, data []byte) error) {
 	websocketClient.MessageHandler = handler
 }
 
@@ -148,6 +153,11 @@ func (websocketClient *MockWebsocketClient) SetDisconnectedHandler(handler func(
 
 func (websocketClient *MockWebsocketClient) Write(data []byte) error {
 	args := websocketClient.MethodCalled("Write", data)
+	return args.Error(0)
+}
+
+func (websocketClient *MockWebsocketClient) WriteWithContext(ctx context.Context, data []byte) error {
+	args := websocketClient.MethodCalled("WriteWithContext", ctx, data)
 	return args.Error(0)
 }
 
@@ -231,13 +241,13 @@ type MockCSMSSecurityHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSSecurityHandler) OnSecurityEventNotification(chargingStationID string, request *security.SecurityEventNotificationRequest) (response *security.SecurityEventNotificationResponse, err error) {
+func (handler *MockCSMSSecurityHandler) OnSecurityEventNotification(ctx context.Context, chargingStationID string, request *security.SecurityEventNotificationRequest) (response *security.SecurityEventNotificationResponse, err error) {
 	args := handler.MethodCalled("OnSecurityEventNotification", chargingStationID, request)
 	response = args.Get(0).(*security.SecurityEventNotificationResponse)
 	return response, args.Error(1)
 }
 
-func (handler *MockCSMSSecurityHandler) OnSignCertificate(chargingStationID string, request *security.SignCertificateRequest) (response *security.SignCertificateResponse, err error) {
+func (handler *MockCSMSSecurityHandler) OnSignCertificate(ctx context.Context, chargingStationID string, request *security.SignCertificateRequest) (response *security.SignCertificateResponse, err error) {
 	args := handler.MethodCalled("OnSignCertificate", chargingStationID, request)
 	response = args.Get(0).(*security.SignCertificateResponse)
 	return response, args.Error(1)
@@ -261,13 +271,13 @@ type MockCSMSProvisioningHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSProvisioningHandler) OnBootNotification(chargingStationId string, request *provisioning.BootNotificationRequest) (confirmation *provisioning.BootNotificationResponse, err error) {
-	args := handler.MethodCalled("OnBootNotification", chargingStationId, request)
+func (handler *MockCSMSProvisioningHandler) OnBootNotification(ctx context.Context, chargingStationID string, request *provisioning.BootNotificationRequest) (response *provisioning.BootNotificationResponse, err error) {
+	args := handler.MethodCalled("OnBootNotification", chargingStationID, request)
 	conf := args.Get(0).(*provisioning.BootNotificationResponse)
 	return conf, args.Error(1)
 }
 
-func (handler *MockCSMSProvisioningHandler) OnNotifyReport(chargingStationID string, request *provisioning.NotifyReportRequest) (confirmation *provisioning.NotifyReportResponse, err error) {
+func (handler *MockCSMSProvisioningHandler) OnNotifyReport(ctx context.Context, chargingStationID string, request *provisioning.NotifyReportRequest) (response *provisioning.NotifyReportResponse, err error) {
 	args := handler.MethodCalled("OnNotifyReport", chargingStationID, request)
 	conf := args.Get(0).(*provisioning.NotifyReportResponse)
 	return conf, args.Error(1)
@@ -321,8 +331,8 @@ type MockCSMSAuthorizationHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSAuthorizationHandler) OnAuthorize(chargingStationId string, request *authorization.AuthorizeRequest) (confirmation *authorization.AuthorizeResponse, err error) {
-	args := handler.MethodCalled("OnAuthorize", chargingStationId, request)
+func (handler *MockCSMSAuthorizationHandler) OnAuthorize(ctx context.Context, chargingStationID string, request *authorization.AuthorizeRequest) (confirmation *authorization.AuthorizeResponse, err error) {
+	args := handler.MethodCalled("OnAuthorize", chargingStationID, request)
 	conf := args.Get(0).(*authorization.AuthorizeResponse)
 	return conf, args.Error(1)
 }
@@ -363,9 +373,9 @@ type MockCSMSReservationHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSReservationHandler) OnReservationStatusUpdate(chargingStationID string, request *reservation.ReservationStatusUpdateRequest) (response *reservation.ReservationStatusUpdateResponse, err error) {
+func (handler *MockCSMSReservationHandler) OnReservationStatusUpdate(ctx context.Context, chargingStationID string, request *reservation.ReservationStatusUpdateRequest) (resp *reservation.ReservationStatusUpdateResponse, err error) {
 	args := handler.MethodCalled("OnReservationStatusUpdate", chargingStationID, request)
-	resp := args.Get(0).(*reservation.ReservationStatusUpdateResponse)
+	resp = args.Get(0).(*reservation.ReservationStatusUpdateResponse)
 	return resp, args.Error(1)
 }
 
@@ -387,13 +397,13 @@ type MockCSMSAvailabilityHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSAvailabilityHandler) OnHeartbeat(chargingStationID string, request *availability.HeartbeatRequest) (response *availability.HeartbeatResponse, err error) {
+func (handler *MockCSMSAvailabilityHandler) OnHeartbeat(ctx context.Context, chargingStationID string, request *availability.HeartbeatRequest) (response *availability.HeartbeatResponse, err error) {
 	args := handler.MethodCalled("OnHeartbeat", chargingStationID, request)
 	resp := args.Get(0).(*availability.HeartbeatResponse)
 	return resp, args.Error(1)
 }
 
-func (handler *MockCSMSAvailabilityHandler) OnStatusNotification(chargingStationID string, request *availability.StatusNotificationRequest) (response *availability.StatusNotificationResponse, err error) {
+func (handler *MockCSMSAvailabilityHandler) OnStatusNotification(ctx context.Context, chargingStationID string, request *availability.StatusNotificationRequest) (response *availability.StatusNotificationResponse, err error) {
 	args := handler.MethodCalled("OnStatusNotification", chargingStationID, request)
 	response = args.Get(0).(*availability.StatusNotificationResponse)
 	return response, args.Error(1)
@@ -421,12 +431,12 @@ type MockCSMSDataHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSDataHandler) OnDataTransfer(chargingStationID string, request *data.DataTransferRequest) (response *data.DataTransferResponse, err error) {
+func (handler *MockCSMSDataHandler) OnDataTransfer(ctx context.Context, chargingStationID string, request *data.DataTransferRequest) (confirmation *data.DataTransferResponse, err error) {
 	args := handler.MethodCalled("OnDataTransfer", chargingStationID, request)
 	rawResp := args.Get(0)
 	err = args.Error(1)
 	if rawResp != nil {
-		response = rawResp.(*data.DataTransferResponse)
+		confirmation = rawResp.(*data.DataTransferResponse)
 	}
 	return
 }
@@ -485,25 +495,25 @@ type MockCSMSDiagnosticsHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSDiagnosticsHandler) OnLogStatusNotification(chargingStationID string, request *diagnostics.LogStatusNotificationRequest) (response *diagnostics.LogStatusNotificationResponse, err error) {
+func (handler *MockCSMSDiagnosticsHandler) OnLogStatusNotification(ctx context.Context, chargingStationID string, request *diagnostics.LogStatusNotificationRequest) (response *diagnostics.LogStatusNotificationResponse, err error) {
 	args := handler.MethodCalled("OnLogStatusNotification", chargingStationID, request)
 	resp := args.Get(0).(*diagnostics.LogStatusNotificationResponse)
 	return resp, args.Error(1)
 }
 
-func (handler *MockCSMSDiagnosticsHandler) OnNotifyCustomerInformation(chargingStationID string, request *diagnostics.NotifyCustomerInformationRequest) (response *diagnostics.NotifyCustomerInformationResponse, err error) {
+func (handler *MockCSMSDiagnosticsHandler) OnNotifyCustomerInformation(ctx context.Context, chargingStationID string, request *diagnostics.NotifyCustomerInformationRequest) (response *diagnostics.NotifyCustomerInformationResponse, err error) {
 	args := handler.MethodCalled("OnNotifyCustomerInformation", chargingStationID, request)
 	resp := args.Get(0).(*diagnostics.NotifyCustomerInformationResponse)
 	return resp, args.Error(1)
 }
 
-func (handler *MockCSMSDiagnosticsHandler) OnNotifyEvent(chargingStationID string, request *diagnostics.NotifyEventRequest) (response *diagnostics.NotifyEventResponse, err error) {
+func (handler *MockCSMSDiagnosticsHandler) OnNotifyEvent(ctx context.Context, chargingStationID string, request *diagnostics.NotifyEventRequest) (response *diagnostics.NotifyEventResponse, err error) {
 	args := handler.MethodCalled("OnNotifyEvent", chargingStationID, request)
 	resp := args.Get(0).(*diagnostics.NotifyEventResponse)
 	return resp, args.Error(1)
 }
 
-func (handler *MockCSMSDiagnosticsHandler) OnNotifyMonitoringReport(chargingStationID string, request *diagnostics.NotifyMonitoringReportRequest) (response *diagnostics.NotifyMonitoringReportResponse, err error) {
+func (handler *MockCSMSDiagnosticsHandler) OnNotifyMonitoringReport(ctx context.Context, chargingStationID string, request *diagnostics.NotifyMonitoringReportRequest) (response *diagnostics.NotifyMonitoringReportResponse, err error) {
 	args := handler.MethodCalled("OnNotifyMonitoringReport", chargingStationID, request)
 	resp := args.Get(0).(*diagnostics.NotifyMonitoringReportResponse)
 	return resp, args.Error(1)
@@ -539,7 +549,7 @@ type MockCSMSDisplayHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSDisplayHandler) OnNotifyDisplayMessages(chargingStationID string, request *display.NotifyDisplayMessagesRequest) (response *display.NotifyDisplayMessagesResponse, err error) {
+func (handler *MockCSMSDisplayHandler) OnNotifyDisplayMessages(ctx context.Context, chargingStationID string, request *display.NotifyDisplayMessagesRequest) (response *display.NotifyDisplayMessagesResponse, err error) {
 	args := handler.MethodCalled("OnNotifyDisplayMessages", chargingStationID, request)
 	conf := args.Get(0).(*display.NotifyDisplayMessagesResponse)
 	return conf, args.Error(1)
@@ -575,13 +585,13 @@ type MockCSMSFirmwareHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSFirmwareHandler) OnFirmwareStatusNotification(chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (response *firmware.FirmwareStatusNotificationResponse, err error) {
+func (handler *MockCSMSFirmwareHandler) OnFirmwareStatusNotification(ctx context.Context, chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (response *firmware.FirmwareStatusNotificationResponse, err error) {
 	args := handler.MethodCalled("OnFirmwareStatusNotification", chargingStationID, request)
 	resp := args.Get(0).(*firmware.FirmwareStatusNotificationResponse)
 	return resp, args.Error(1)
 }
 
-func (handler *MockCSMSFirmwareHandler) OnPublishFirmwareStatusNotification(chargingStationID string, request *firmware.PublishFirmwareStatusNotificationRequest) (response *firmware.PublishFirmwareStatusNotificationResponse, err error) {
+func (handler *MockCSMSFirmwareHandler) OnPublishFirmwareStatusNotification(ctx context.Context, chargingStationID string, request *firmware.PublishFirmwareStatusNotificationRequest) (response *firmware.PublishFirmwareStatusNotificationResponse, err error) {
 	args := handler.MethodCalled("OnPublishFirmwareStatusNotification", chargingStationID, request)
 	resp := args.Get(0).(*firmware.PublishFirmwareStatusNotificationResponse)
 	return resp, args.Error(1)
@@ -617,13 +627,13 @@ type MockCSMSIso15118Handler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSIso15118Handler) OnGet15118EVCertificate(chargingStationID string, request *iso15118.Get15118EVCertificateRequest) (confirmation *iso15118.Get15118EVCertificateResponse, err error) {
+func (handler *MockCSMSIso15118Handler) OnGet15118EVCertificate(ctx context.Context, chargingStationID string, request *iso15118.Get15118EVCertificateRequest) (response *iso15118.Get15118EVCertificateResponse, err error) {
 	args := handler.MethodCalled("OnGet15118EVCertificate", chargingStationID, request)
 	conf := args.Get(0).(*iso15118.Get15118EVCertificateResponse)
 	return conf, args.Error(1)
 }
 
-func (handler *MockCSMSIso15118Handler) OnGetCertificateStatus(chargingStationID string, request *iso15118.GetCertificateStatusRequest) (confirmation *iso15118.GetCertificateStatusResponse, err error) {
+func (handler *MockCSMSIso15118Handler) OnGetCertificateStatus(ctx context.Context, chargingStationID string, request *iso15118.GetCertificateStatusRequest) (response *iso15118.GetCertificateStatusResponse, err error) {
 	args := handler.MethodCalled("OnGetCertificateStatus", chargingStationID, request)
 	conf := args.Get(0).(*iso15118.GetCertificateStatusResponse)
 	return conf, args.Error(1)
@@ -665,7 +675,7 @@ type MockCSMSMeterHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSMeterHandler) OnMeterValues(chargingStationID string, request *meter.MeterValuesRequest) (response *meter.MeterValuesResponse, err error) {
+func (handler *MockCSMSMeterHandler) OnMeterValues(ctx context.Context, chargingStationID string, request *meter.MeterValuesRequest) (response *meter.MeterValuesResponse, err error) {
 	args := handler.MethodCalled("OnMeterValues", chargingStationID, request)
 	r := args.Get(0).(*meter.MeterValuesResponse)
 	return r, args.Error(1)
@@ -743,31 +753,31 @@ type MockCSMSSmartChargingHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSSmartChargingHandler) OnClearedChargingLimit(chargingStationID string, request *smartcharging.ClearedChargingLimitRequest) (confirmation *smartcharging.ClearedChargingLimitResponse, err error) {
+func (handler *MockCSMSSmartChargingHandler) OnClearedChargingLimit(ctx context.Context, chargingStationID string, request *smartcharging.ClearedChargingLimitRequest) (response *smartcharging.ClearedChargingLimitResponse, err error) {
 	args := handler.MethodCalled("OnClearedChargingLimit", chargingStationID, request)
 	r := args.Get(0).(*smartcharging.ClearedChargingLimitResponse)
 	return r, args.Error(1)
 }
 
-func (handler *MockCSMSSmartChargingHandler) OnNotifyChargingLimit(chargingStationID string, request *smartcharging.NotifyChargingLimitRequest) (response *smartcharging.NotifyChargingLimitResponse, err error) {
+func (handler *MockCSMSSmartChargingHandler) OnNotifyChargingLimit(ctx context.Context, chargingStationID string, request *smartcharging.NotifyChargingLimitRequest) (response *smartcharging.NotifyChargingLimitResponse, err error) {
 	args := handler.MethodCalled("OnNotifyChargingLimit", chargingStationID, request)
 	r := args.Get(0).(*smartcharging.NotifyChargingLimitResponse)
 	return r, args.Error(1)
 }
 
-func (handler *MockCSMSSmartChargingHandler) OnNotifyEVChargingNeeds(chargingStationID string, request *smartcharging.NotifyEVChargingNeedsRequest) (response *smartcharging.NotifyEVChargingNeedsResponse, err error) {
+func (handler *MockCSMSSmartChargingHandler) OnNotifyEVChargingNeeds(ctx context.Context, chargingStationID string, request *smartcharging.NotifyEVChargingNeedsRequest) (response *smartcharging.NotifyEVChargingNeedsResponse, err error) {
 	args := handler.MethodCalled("OnNotifyEVChargingNeeds", chargingStationID, request)
 	r := args.Get(0).(*smartcharging.NotifyEVChargingNeedsResponse)
 	return r, args.Error(1)
 }
 
-func (handler *MockCSMSSmartChargingHandler) OnNotifyEVChargingSchedule(chargingStationID string, request *smartcharging.NotifyEVChargingScheduleRequest) (response *smartcharging.NotifyEVChargingScheduleResponse, err error) {
+func (handler *MockCSMSSmartChargingHandler) OnNotifyEVChargingSchedule(ctx context.Context, chargingStationID string, request *smartcharging.NotifyEVChargingScheduleRequest) (response *smartcharging.NotifyEVChargingScheduleResponse, err error) {
 	args := handler.MethodCalled("OnNotifyEVChargingSchedule", chargingStationID, request)
 	r := args.Get(0).(*smartcharging.NotifyEVChargingScheduleResponse)
 	return r, args.Error(1)
 }
 
-func (handler *MockCSMSSmartChargingHandler) OnReportChargingProfiles(chargingStationID string, request *smartcharging.ReportChargingProfilesRequest) (reponse *smartcharging.ReportChargingProfilesResponse, err error) {
+func (handler *MockCSMSSmartChargingHandler) OnReportChargingProfiles(ctx context.Context, chargingStationID string, request *smartcharging.ReportChargingProfilesRequest) (reponse *smartcharging.ReportChargingProfilesResponse, err error) {
 	args := handler.MethodCalled("OnReportChargingProfiles", chargingStationID, request)
 	r := args.Get(0).(*smartcharging.ReportChargingProfilesResponse)
 	return r, args.Error(1)
@@ -809,7 +819,7 @@ type MockCSMSTransactionsHandler struct {
 	mock.Mock
 }
 
-func (handler *MockCSMSTransactionsHandler) OnTransactionEvent(chargingStationID string, request *transactions.TransactionEventRequest) (response *transactions.TransactionEventResponse, err error) {
+func (handler *MockCSMSTransactionsHandler) OnTransactionEvent(ctx context.Context, chargingStationID string, request *transactions.TransactionEventRequest) (response *transactions.TransactionEventResponse, err error) {
 	args := handler.MethodCalled("OnTransactionEvent", chargingStationID, request)
 	response = args.Get(0).(*transactions.TransactionEventResponse)
 	return response, args.Error(1)
@@ -878,9 +888,9 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOption
 	})
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
 	suite.mockWsServer.On("Stop").Return()
-	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
-		clientId := args.String(0)
-		data := args.Get(1)
+	suite.mockWsServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
+		clientId := args.String(1)
+		data := args.Get(2)
 		bytes := data.([]byte)
 		assert.Equal(t, options.clientId, clientId)
 		if options.rawWrittenMessage != nil {
@@ -889,7 +899,7 @@ func setupDefaultCSMSHandlers(suite *OcppV2TestSuite, options expectedCSMSOption
 		}
 		if options.forwardWrittenMessage {
 			// Notify client of incoming response
-			err := suite.mockWsClient.MessageHandler(bytes)
+			err := suite.mockWsClient.MessageHandler(context.Background(), bytes)
 			assert.Nil(t, err)
 		}
 	})
@@ -941,8 +951,8 @@ func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expecte
 			suite.mockWsServer.NewClientHandler(options.channel)
 		}
 	})
-	suite.mockWsClient.On("Write", mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
-		data := args.Get(0)
+	suite.mockWsClient.On("WriteWithContext", mock.Anything, mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
+		data := args.Get(1)
 		bytes := data.([]byte)
 		if options.rawWrittenMessage != nil {
 			assert.NotNil(t, bytes)
@@ -950,7 +960,7 @@ func setupDefaultChargingStationHandlers(suite *OcppV2TestSuite, options expecte
 		}
 		// Notify server of incoming request
 		if options.forwardWrittenMessage {
-			err := suite.mockWsServer.MessageHandler(options.channel, bytes)
+			err := suite.mockWsServer.MessageHandler(context.Background(), options.channel, bytes)
 			assert.Nil(t, err)
 		}
 	})
@@ -984,7 +994,7 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	// 1. Test sending an unsupported request, expecting an error
-	err = suite.chargingStation.SendRequestAsync(request, func(confirmation ocpp.Response, err error) {
+	err = suite.chargingStation.SendRequestAsync(context.Background(), request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
 	require.Error(t, err)
@@ -992,7 +1002,7 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	// 2. Test receiving an unsupported request on the other endpoint and receiving an error
 	// Mark mocked request as pending, otherwise response will be ignored
 	suite.ocppjClient.RequestState.AddPendingRequest(messageId, request)
-	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
+	err = suite.mockWsServer.MessageHandler(context.Background(), channel, []byte(requestJson))
 	require.Nil(t, err)
 	result := <-resultChannel
 	assert.True(t, result)
@@ -1025,7 +1035,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	// 1. Test sending an unsupported request, expecting an error
-	err = suite.csms.SendRequestAsync(wsId, request, func(response ocpp.Response, err error) {
+	err = suite.csms.SendRequestAsync(context.Background(), wsId, request, func(response ocpp.Response, err error) {
 		t.Fail()
 	})
 	require.Error(t, err)
@@ -1034,7 +1044,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV2TestSuite, request ocp
 	// Mark mocked request as pending, otherwise response will be ignored
 	suite.ocppjServer.RequestState.AddPendingRequest(wsId, messageId, request)
 	// Run response test
-	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
+	err = suite.mockWsClient.MessageHandler(context.Background(), []byte(requestJson))
 	assert.Nil(t, err)
 	_, ok := <-resultChannel
 	assert.True(t, ok)

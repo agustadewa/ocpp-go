@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -76,7 +77,7 @@ func (suite *OcppV16TestSuite) TestReserveNowE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.ReserveNow(wsId, func(confirmation *reservation.ReserveNowConfirmation, err error) {
+	err = suite.centralSystem.ReserveNow(context.Background(), wsId, func(confirmation *reservation.ReserveNowConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

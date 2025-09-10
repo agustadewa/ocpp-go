@@ -38,7 +38,7 @@ func (handler *ChargingStationHandler) OnUpdateFirmware(ctx context.Context, req
 }
 
 func updateFirmwareStatus(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) {
-	statusConfirmation, err := chargingStation.FirmwareStatusNotification(nil, status, props...)
+	statusConfirmation, err := chargingStation.FirmwareStatusNotification(context.Background(), status, props...)
 	checkError(err)
 	logDefault(statusConfirmation.GetFeatureName()).Infof("firmware status updated to %v", status)
 }

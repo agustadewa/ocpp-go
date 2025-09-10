@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	localauth "github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockLocalAuthListChargePointHandler) EXPECT() *MockLocalAuthListCharge
 }
 
 // OnGetLocalListVersion provides a mock function with given fields: request
-func (_m *MockLocalAuthListChargePointHandler) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (*localauth.GetLocalListVersionConfirmation, error) {
+func (_m *MockLocalAuthListChargePointHandler) OnGetLocalListVersion(ctx context.Context, request *localauth.GetLocalListVersionRequest) (*localauth.GetLocalListVersionConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

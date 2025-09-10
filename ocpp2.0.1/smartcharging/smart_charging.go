@@ -10,15 +10,15 @@ import (
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Smart charging profile.
 type CSMSHandler interface {
 	// OnClearedChargingLimit is called on the CSMS whenever a ClearedChargingLimitRequest is received from a charging station.
-	OnClearedChargingLimit(chargingStationID string, request *ClearedChargingLimitRequest) (response *ClearedChargingLimitResponse, err error)
+	OnClearedChargingLimit(ctx context.Context, chargingStationID string, request *ClearedChargingLimitRequest) (response *ClearedChargingLimitResponse, err error)
 	// OnNotifyChargingLimit is called on the CSMS whenever a NotifyChargingLimitRequest is received from a charging station.
-	OnNotifyChargingLimit(chargingStationID string, request *NotifyChargingLimitRequest) (response *NotifyChargingLimitResponse, err error)
+	OnNotifyChargingLimit(ctx context.Context, chargingStationID string, request *NotifyChargingLimitRequest) (response *NotifyChargingLimitResponse, err error)
 	// OnNotifyEVChargingNeeds is called on the CSMS whenever a NotifyEVChargingNeedsRequest is received from a charging station.
-	OnNotifyEVChargingNeeds(chargingStationID string, request *NotifyEVChargingNeedsRequest) (response *NotifyEVChargingNeedsResponse, err error)
+	OnNotifyEVChargingNeeds(ctx context.Context, chargingStationID string, request *NotifyEVChargingNeedsRequest) (response *NotifyEVChargingNeedsResponse, err error)
 	// OnNotifyEVChargingSchedule is called on the CSMS whenever a NotifyEVChargingScheduleRequest is received from a charging station.
-	OnNotifyEVChargingSchedule(chargingStationID string, request *NotifyEVChargingScheduleRequest) (response *NotifyEVChargingScheduleResponse, err error)
+	OnNotifyEVChargingSchedule(ctx context.Context, chargingStationID string, request *NotifyEVChargingScheduleRequest) (response *NotifyEVChargingScheduleResponse, err error)
 	// OnReportChargingProfiles is called on the CSMS whenever a ReportChargingProfilesRequest is received from a charging station.
-	OnReportChargingProfiles(chargingStationID string, request *ReportChargingProfilesRequest) (reponse *ReportChargingProfilesResponse, err error)
+	OnReportChargingProfiles(ctx context.Context, chargingStationID string, request *ReportChargingProfilesRequest) (reponse *ReportChargingProfilesResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Smart charging profile.

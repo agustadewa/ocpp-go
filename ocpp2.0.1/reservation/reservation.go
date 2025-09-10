@@ -10,7 +10,7 @@ import (
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Reservation profile.
 type CSMSHandler interface {
 	// OnReservationStatusUpdate is called on the CSMS whenever a ReservationStatusUpdateRequest is received from a charging station.
-	OnReservationStatusUpdate(chargingStationID string, request *ReservationStatusUpdateRequest) (resp *ReservationStatusUpdateResponse, err error)
+	OnReservationStatusUpdate(ctx context.Context, chargingStationID string, request *ReservationStatusUpdateRequest) (resp *ReservationStatusUpdateResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Reservation profile.

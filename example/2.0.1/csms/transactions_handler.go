@@ -1,8 +1,12 @@
 package main
 
-import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
+import (
+	"context"
 
-func (c *CSMSHandler) OnTransactionEvent(chargingStationID string, request *transactions.TransactionEventRequest) (response *transactions.TransactionEventResponse, err error) {
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
+)
+
+func (c *CSMSHandler) OnTransactionEvent(ctx context.Context, chargingStationID string, request *transactions.TransactionEventRequest) (response *transactions.TransactionEventResponse, err error) {
 	switch request.EventType {
 	case transactions.TransactionEventStarted:
 		logDefault(chargingStationID, request.GetFeatureName()).Infof("transaction %v started, reason: %v, state: %v", request.TransactionInfo.TransactionID, request.TriggerReason, request.TransactionInfo.ChargingState)

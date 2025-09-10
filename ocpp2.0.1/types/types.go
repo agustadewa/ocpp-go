@@ -658,7 +658,7 @@ type UnitOfMeasure struct {
 	Multiplier *int   `json:"multiplier,omitempty" validate:"omitempty,gte=0"`
 }
 
-//TODO: remove SignatureMethod (obsolete from 2.0.1 onwards)
+// TODO: remove SignatureMethod (obsolete from 2.0.1 onwards)
 
 // Enumeration of the cryptographic method used to create the digital signature.
 // The list is expected to grow in future OCPP releases to allow other signature methods used by Smart Meters.
@@ -680,7 +680,7 @@ func isValidSignatureMethod(fl validator.FieldLevel) bool {
 	}
 }
 
-//TODO: remove EncodingMethod (obsolete from 2.0.1 onwards)
+// TODO: remove EncodingMethod (obsolete from 2.0.1 onwards)
 
 // Enumeration of the method used to encode the meter value into binary data before applying the digital signature algorithm.
 // If the EncodingMethod is set to Other, the CSMS MAY try to determine the encoding method from the encodedMeterValue field.

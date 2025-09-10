@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
@@ -62,7 +63,7 @@ func (suite *OcppV16TestSuite) TestCertificateSignedE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.CertificateSigned(wsId, func(confirmation *security.CertificateSignedResponse, err error) {
+	err = suite.centralSystem.CertificateSigned(context.Background(), wsId, func(confirmation *security.CertificateSignedResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	reservation "github.com/lorenzodonini/ocpp-go/ocpp1.6/reservation"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -79,7 +81,7 @@ func (_c *MockReservationChargePointHandler_OnCancelReservation_Call) RunAndRetu
 }
 
 // OnReserveNow provides a mock function with given fields: request
-func (_m *MockReservationChargePointHandler) OnReserveNow(request *reservation.ReserveNowRequest) (*reservation.ReserveNowConfirmation, error) {
+func (_m *MockReservationChargePointHandler) OnReserveNow(ctx context.Context, request *reservation.ReserveNowRequest) (*reservation.ReserveNowConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

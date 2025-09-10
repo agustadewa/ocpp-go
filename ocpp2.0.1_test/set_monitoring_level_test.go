@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -73,7 +74,7 @@ func (suite *OcppV2TestSuite) TestSetMonitoringLevelE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.SetMonitoringLevel(wsId, func(response *diagnostics.SetMonitoringLevelResponse, err error) {
+	err = suite.csms.SetMonitoringLevel(context.Background(), wsId, func(response *diagnostics.SetMonitoringLevelResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, status, response.Status)

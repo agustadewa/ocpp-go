@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/localauth"
@@ -55,7 +56,7 @@ func (suite *OcppV16TestSuite) TestGetLocalListVersionE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.GetLocalListVersion(wsId, func(confirmation *localauth.GetLocalListVersionConfirmation, err error) {
+	err = suite.centralSystem.GetLocalListVersion(context.Background(), wsId, func(confirmation *localauth.GetLocalListVersionConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, listVersion, confirmation.ListVersion)

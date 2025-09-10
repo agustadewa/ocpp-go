@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	securefirmware "github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockSecureFirmwareCentralSystemHandler) EXPECT() *MockSecureFirmwareCe
 }
 
 // OnSignedFirmwareStatusNotification provides a mock function with given fields: chargingStationID, request
-func (_m *MockSecureFirmwareCentralSystemHandler) OnSignedFirmwareStatusNotification(chargingStationID string, request *securefirmware.SignedFirmwareStatusNotificationRequest) (*securefirmware.SignedFirmwareStatusNotificationResponse, error) {
+func (_m *MockSecureFirmwareCentralSystemHandler) OnSignedFirmwareStatusNotification(ctx context.Context, chargingStationID string, request *securefirmware.SignedFirmwareStatusNotificationRequest) (*securefirmware.SignedFirmwareStatusNotificationResponse, error) {
 	ret := _m.Called(chargingStationID, request)
 
 	if len(ret) == 0 {

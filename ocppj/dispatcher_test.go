@@ -46,6 +46,11 @@ func (s *ServerDispatcherTestSuite) TestServerSendRequest() {
 		assert.Equal(t, clientID, id)
 		sent <- true
 	}).Return(nil)
+	s.websocketServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
+		id, _ := args.Get(1).(string)
+		assert.Equal(t, clientID, id)
+		sent <- true
+	}).Return(nil)
 	timeout := time.Second * 1
 	s.dispatcher.SetTimeout(timeout)
 	s.dispatcher.SetOnRequestCanceled(func(cID string, rID string, request ocpp.Request, err *ocpp.Error) {
@@ -93,6 +98,11 @@ func (s *ServerDispatcherTestSuite) TestServerRequestCanceled() {
 	// This never starts a timeout
 	s.websocketServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
 		id, _ := args.Get(0).(string)
+		assert.Equal(t, clientID, id)
+		<-writeC
+	}).Return(fmt.Errorf(errMsg))
+	s.websocketServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
+		id, _ := args.Get(1).(string)
 		assert.Equal(t, clientID, id)
 		<-writeC
 	}).Return(fmt.Errorf(errMsg))
@@ -162,6 +172,11 @@ func (s *ServerDispatcherTestSuite) TestDeleteClient() {
 		assert.Equal(t, clientID, id)
 		sent <- true
 	}).Return(nil)
+	s.websocketServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
+		id, _ := args.Get(1).(string)
+		assert.Equal(t, clientID, id)
+		sent <- true
+	}).Return(nil)
 	s.dispatcher.Start()
 	require.True(t, s.dispatcher.IsRunning())
 	// Simulate client connection
@@ -191,6 +206,10 @@ func (s *ServerDispatcherTestSuite) TestServerDispatcherTimeout() {
 	canceled := make(chan bool, 1)
 	s.websocketServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
 		id, _ := args.Get(0).(string)
+		assert.Equal(t, clientID, id)
+	}).Return(nil)
+	s.websocketServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
+		id, _ := args.Get(1).(string)
 		assert.Equal(t, clientID, id)
 	}).Return(nil)
 	// Create mock request
@@ -259,6 +278,9 @@ func (c *ClientDispatcherTestSuite) TestClientSendRequest() {
 	c.websocketClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 		sent <- true
 	}).Return(nil)
+	c.websocketClient.On("WriteWithContext", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		sent <- true
+	}).Return(nil)
 	c.dispatcher.Start()
 	require.True(t, c.dispatcher.IsRunning())
 	// Create and send mock request
@@ -292,6 +314,9 @@ func (c *ClientDispatcherTestSuite) TestClientRequestCanceled() {
 	writeC := make(chan bool, 1)
 	errMsg := "mockError"
 	c.websocketClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
+		<-writeC
+	}).Return(fmt.Errorf(errMsg))
+	c.websocketClient.On("WriteWithContext", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		<-writeC
 	}).Return(fmt.Errorf(errMsg))
 	// Create mock request
@@ -337,6 +362,9 @@ func (c *ClientDispatcherTestSuite) TestClientDispatcherTimeout() {
 	c.websocketClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 		writeC <- true
 	}).Return(nil)
+	c.websocketClient.On("WriteWithContext", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		writeC <- true
+	}).Return(nil)
 	// Create mock request
 	req := newMockRequest("somevalue")
 	call, err := c.endpoint.CreateCall(req)
@@ -375,6 +403,7 @@ func (c *ClientDispatcherTestSuite) TestClientPauseDispatcher() {
 	// Create mock request
 	timeout := make(chan bool, 1)
 	c.websocketClient.On("Write", mock.Anything).Return(nil)
+	c.websocketClient.On("WriteWithContext", mock.Anything, mock.Anything).Return(nil)
 	req := newMockRequest("somevalue")
 	call, err := c.endpoint.CreateCall(req)
 	require.NoError(t, err)
@@ -420,6 +449,9 @@ func (c *ClientDispatcherTestSuite) TestClientSendPausedDispatcher() {
 	t := c.T()
 	// Create mock request
 	c.websocketClient.On("Write", mock.Anything).Run(func(args mock.Arguments) {
+		require.Fail(t, "write should never be called")
+	}).Return(nil)
+	c.websocketClient.On("WriteWithContext", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		require.Fail(t, "write should never be called")
 	}).Return(nil)
 	// Set timeout (unused for this test)

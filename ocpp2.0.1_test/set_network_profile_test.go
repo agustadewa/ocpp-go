@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -147,7 +148,7 @@ func (suite *OcppV2TestSuite) TestSetNetworkProfileE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.SetNetworkProfile(wsId, func(resp *provisioning.SetNetworkProfileResponse, err error) {
+	err = suite.csms.SetNetworkProfile(context.Background(), wsId, func(resp *provisioning.SetNetworkProfileResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, status, resp.Status)

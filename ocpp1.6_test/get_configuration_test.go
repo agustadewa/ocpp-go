@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -37,9 +38,9 @@ func (suite *OcppV16TestSuite) TestGetConfigurationConfirmationValidation() {
 		{core.GetConfigurationConfirmation{UnknownKey: []string{">50................................................"}}, false},
 		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: ">50................................................", Readonly: true, Value: &value1}}}, false},
 		{core.GetConfigurationConfirmation{ConfigurationKey: []core.ConfigurationKey{{Key: "key1", Readonly: true, Value: &longValue}}}, false},
-		//{ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}, {Key: "key1", Readonly: false, Value: "value2"}}}, false},
+		// {ocpp16.GetConfigurationConfirmation{ConfigurationKey: []ocpp16.ConfigurationKey{{Key: "key1", Readonly: true, Value: "value1"}, {Key: "key1", Readonly: false, Value: "value2"}}}, false},
 	}
-	//TODO: additional test cases TBD. See get_configuration.go
+	// TODO: additional test cases TBD. See get_configuration.go
 	ExecuteGenericTestTable(t, confirmationTable)
 }
 
@@ -78,7 +79,7 @@ func (suite *OcppV16TestSuite) TestGetConfigurationE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.GetConfiguration(wsId, func(confirmation *core.GetConfigurationConfirmation, err error) {
+	err = suite.centralSystem.GetConfiguration(context.Background(), wsId, func(confirmation *core.GetConfigurationConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, unknownKeys, confirmation.UnknownKey)

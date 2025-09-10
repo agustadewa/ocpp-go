@@ -2,6 +2,7 @@ package ws
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -38,18 +39,18 @@ const (
 	defaultSubProtocol = "ocpp1.6"
 )
 
-func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) *server {
+func newWebsocketServer(t *testing.T, onMessage func(ctx context.Context, data []byte) ([]byte, error)) *server {
 	wsServer := NewServer()
 	innerS, ok := wsServer.(*server)
 	require.True(t, ok)
-	innerS.SetMessageHandler(func(ws Channel, data []byte) error {
+	innerS.SetMessageHandler(func(ctx context.Context, ws Channel, data []byte) error {
 		assert.NotNil(t, ws)
 		assert.NotNil(t, data)
 		if onMessage != nil {
-			response, err := onMessage(data)
+			response, err := onMessage(ctx, data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = innerS.Write(ws.ID(), data)
+				err = innerS.WriteWithContext(ctx, ws.ID(), data)
 				assert.Nil(t, err)
 			}
 		}
@@ -58,18 +59,18 @@ func newWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return innerS
 }
 
-func newWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) *client {
+func newWebsocketClient(t *testing.T, onMessage func(ctx context.Context, data []byte) ([]byte, error)) *client {
 	wsClient := NewClient()
 	innerC, ok := wsClient.(*client)
 	require.True(t, ok)
 	innerC.SetRequestedSubProtocol(defaultSubProtocol)
-	innerC.SetMessageHandler(func(data []byte) error {
+	innerC.SetMessageHandler(func(ctx context.Context, data []byte) error {
 		assert.NotNil(t, data)
 		if onMessage != nil {
-			response, err := onMessage(data)
+			response, err := onMessage(ctx, data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = innerC.Write(data)
+				err = innerC.WriteWithContext(ctx, data)
 				assert.Nil(t, err)
 			}
 		}
@@ -168,7 +169,7 @@ func (s *WebSocketSuite) TestPingTicker() {
 func (s *WebSocketSuite) TestWebsocketConnectionState() {
 	s.False(s.client.IsConnected())
 	closeC := make(chan struct{}, 1)
-	s.client.SetMessageHandler(func(data []byte) error {
+	s.client.SetMessageHandler(func(ctx context.Context, data []byte) error {
 		s.Fail("unexpected message")
 		return nil
 	})
@@ -249,7 +250,7 @@ func (s *WebSocketSuite) TestWebsocketEcho() {
 	msg := []byte("Hello webSocket!")
 	triggerC := make(chan struct{}, 1)
 	done := make(chan struct{}, 1)
-	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+	s.server = newWebsocketServer(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.True(bytes.Equal(msg, data))
 		// Echo reply received, notifying flow routine
 		triggerC <- struct{}{}
@@ -259,7 +260,7 @@ func (s *WebSocketSuite) TestWebsocketEcho() {
 		tlsState := ws.TLSConnectionState()
 		s.Nil(tlsState)
 	})
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.True(bytes.Equal(msg, data))
 		// Echo response received, notifying flow routine
 		done <- struct{}{}
@@ -273,7 +274,7 @@ func (s *WebSocketSuite) TestWebsocketEcho() {
 		// Will reply to client.
 		sig := <-triggerC
 		s.NotNil(sig)
-		err := s.server.Write(path.Base(testPath), msg)
+		err := s.server.WriteWithContext(context.Background(), path.Base(testPath), msg)
 		s.NoError(err)
 		sig = <-triggerC
 		s.NotNil(sig)
@@ -286,7 +287,7 @@ func (s *WebSocketSuite) TestWebsocketEcho() {
 	s.NoError(err)
 	s.True(s.client.IsConnected())
 	// Test message
-	err = s.client.Write(msg)
+	err = s.client.WriteWithContext(context.Background(), msg)
 	s.NoError(err)
 	// Wait for echo result
 	select {
@@ -299,7 +300,7 @@ func (s *WebSocketSuite) TestWebsocketEcho() {
 
 func (s *WebSocketSuite) TestWebsocketChargePointIdResolver() {
 	connected := make(chan string)
-	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+	s.server = newWebsocketServer(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from client!")
 		return nil, nil
 	})
@@ -313,7 +314,7 @@ func (s *WebSocketSuite) TestWebsocketChargePointIdResolver() {
 	time.Sleep(500 * time.Millisecond)
 
 	// Test message
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from server!")
 		return nil, nil
 	})
@@ -328,7 +329,7 @@ func (s *WebSocketSuite) TestWebsocketChargePointIdResolver() {
 }
 
 func (s *WebSocketSuite) TestWebsocketChargePointIdResolverFailure() {
-	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+	s.server = newWebsocketServer(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from client!")
 		return nil, nil
 	})
@@ -339,7 +340,7 @@ func (s *WebSocketSuite) TestWebsocketChargePointIdResolverFailure() {
 	time.Sleep(500 * time.Millisecond)
 
 	// Test message
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from server!")
 		return nil, nil
 	})
@@ -366,10 +367,10 @@ func (s *WebSocketSuite) TestWebsocketBootRetries() {
 		}
 		s.Equal(connected, client.IsConnected())
 	}
-	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+	s.server = newWebsocketServer(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		return data, nil
 	})
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		return nil, nil
 	})
 	// Reduce timeout to make test faster
@@ -399,7 +400,7 @@ func (s *WebSocketSuite) TestTLSWebsocketEcho() {
 	triggerC := make(chan struct{}, 1)
 	done := make(chan struct{}, 1)
 	// Use NewServer(WithServerTLSConfig(...)) when in different package
-	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+	s.server = newWebsocketServer(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.True(bytes.Equal(msg, data))
 		// Message received, notifying flow routine
 		triggerC <- struct{}{}
@@ -426,7 +427,7 @@ func (s *WebSocketSuite) TestTLSWebsocketEcho() {
 	s.server.tlsCertificatePath = certFilename
 	s.server.tlsCertificateKey = keyFilename
 	// Create TLS client
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.True(bytes.Equal(msg, data))
 		// Echo response received, notifying flow routine
 		done <- struct{}{}
@@ -450,7 +451,7 @@ func (s *WebSocketSuite) TestTLSWebsocketEcho() {
 		// Wait for messages to be exchanged, then close connection
 		sig := <-triggerC
 		s.NotNil(sig)
-		err = s.server.Write(path.Base(testPath), msg)
+		err = s.server.WriteWithContext(context.Background(), path.Base(testPath), msg)
 		s.NoError(err)
 		sig = <-triggerC
 		s.NotNil(sig)
@@ -464,7 +465,7 @@ func (s *WebSocketSuite) TestTLSWebsocketEcho() {
 	s.NoError(err)
 	s.True(s.client.IsConnected())
 	// Test message
-	err = s.client.Write(msg)
+	err = s.client.WriteWithContext(context.Background(), msg)
 	s.NoError(err)
 	// Wait for echo result
 	select {
@@ -507,7 +508,7 @@ func (s *WebSocketSuite) TestClientDuplicateConnection() {
 	go s.server.Start(serverPort, serverPath)
 	time.Sleep(100 * time.Millisecond)
 	// Connect client 1
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		return nil, nil
 	})
 	host := fmt.Sprintf("localhost:%v", serverPort)
@@ -516,7 +517,7 @@ func (s *WebSocketSuite) TestClientDuplicateConnection() {
 	s.NoError(err)
 	// Try to connect client 2
 	disconnectC := make(chan struct{})
-	wsClient2 := newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	wsClient2 := newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		return nil, nil
 	})
 	wsClient2.SetDisconnectedHandler(func(err error) {
@@ -552,7 +553,7 @@ func (s *WebSocketSuite) TestServerStopConnection() {
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		disconnectedServerC <- struct{}{}
 	})
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		return nil, nil
 	})
 	s.client.SetDisconnectedHandler(func(err error) {
@@ -618,7 +619,7 @@ func (s *WebSocketSuite) TestWebsocketServerStopAllConnections() {
 	wg := sync.WaitGroup{}
 	host := fmt.Sprintf("localhost:%v", serverPort)
 	for i := 0; i < numClients; i++ {
-		wsClient := newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+		wsClient := newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 			return nil, nil
 		})
 		wsClient.SetDisconnectedHandler(func(err error) {
@@ -851,7 +852,7 @@ func (s *WebSocketSuite) TestInvalidBasicAuth() {
 }
 
 func (s *WebSocketSuite) TestInvalidOriginHeader() {
-	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+	s.server = newWebsocketServer(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from client!")
 		return nil, nil
 	})
@@ -862,7 +863,7 @@ func (s *WebSocketSuite) TestInvalidOriginHeader() {
 	time.Sleep(100 * time.Millisecond)
 
 	// Test message
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from server!")
 		return nil, nil
 	})
@@ -883,7 +884,7 @@ func (s *WebSocketSuite) TestInvalidOriginHeader() {
 func (s *WebSocketSuite) TestCustomOriginHeaderHandler() {
 	origin := "example.org"
 	connected := make(chan struct{})
-	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+	s.server = newWebsocketServer(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from client!")
 		return nil, nil
 	})
@@ -897,7 +898,7 @@ func (s *WebSocketSuite) TestCustomOriginHeaderHandler() {
 	time.Sleep(100 * time.Millisecond)
 
 	// Test message
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from server!")
 		return nil, nil
 	})
@@ -926,7 +927,7 @@ func (s *WebSocketSuite) TestCustomCheckClientHandler() {
 	invalidTestPath := "/ws/invalid-testws"
 	id := path.Base(testPath)
 	connected := make(chan struct{})
-	s.server = newWebsocketServer(s.T(), func(data []byte) ([]byte, error) {
+	s.server = newWebsocketServer(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from client!")
 		return nil, nil
 	})
@@ -940,7 +941,7 @@ func (s *WebSocketSuite) TestCustomCheckClientHandler() {
 	time.Sleep(100 * time.Millisecond)
 
 	// Test message
-	s.client = newWebsocketClient(s.T(), func(data []byte) ([]byte, error) {
+	s.client = newWebsocketClient(s.T(), func(ctx context.Context, data []byte) ([]byte, error) {
 		s.Fail("no message should be received from server!")
 		return nil, nil
 	})
@@ -1248,7 +1249,7 @@ func (s *WebSocketSuite) TestServerErrors() {
 			}
 		}
 	}()
-	s.server.SetMessageHandler(func(ws Channel, data []byte) error {
+	s.server.SetMessageHandler(func(ctx context.Context, ws Channel, data []byte) error {
 		return fmt.Errorf("this is a dummy error")
 	})
 	// Will trigger an out-of-bound error
@@ -1269,12 +1270,12 @@ func (s *WebSocketSuite) TestServerErrors() {
 	r = <-triggerC
 	s.NotNil(r)
 	// Send a dummy message and expect error on server side
-	err = s.client.Write([]byte("dummy message"))
+	err = s.client.WriteWithContext(context.Background(), []byte("dummy message"))
 	s.NoError(err)
 	r = <-triggerC
 	s.NotNil(r)
 	// Send message to non-existing client
-	err = s.server.Write("fakeId", []byte("dummy response"))
+	err = s.server.WriteWithContext(context.Background(), "fakeId", []byte("dummy response"))
 	s.Error(err)
 	// Send unexpected close message and wait for error to be thrown
 	err = s.client.webSocket.connection.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseUnsupportedData, ""))
@@ -1294,7 +1295,7 @@ func (s *WebSocketSuite) TestClientErrors() {
 	s.server.SetNewClientHandler(func(ws Channel) {
 		triggerC <- struct{}{}
 	})
-	s.client.SetMessageHandler(func(data []byte) error {
+	s.client.SetMessageHandler(func(ctx context.Context, data []byte) error {
 		return fmt.Errorf("this is a dummy error")
 	})
 	// Intercept errors asynchronously
@@ -1315,7 +1316,7 @@ func (s *WebSocketSuite) TestClientErrors() {
 	go s.server.Start(serverPort, serverPath)
 	time.Sleep(100 * time.Millisecond)
 	// Attempt to write a message without being connected
-	err := s.client.Write([]byte("dummy message"))
+	err := s.client.WriteWithContext(context.Background(), []byte("dummy message"))
 	s.Error(err)
 	// Connect client
 	host := fmt.Sprintf("localhost:%v", serverPort)
@@ -1326,7 +1327,7 @@ func (s *WebSocketSuite) TestClientErrors() {
 	r := <-triggerC
 	s.NotNil(r)
 	// Send a dummy message and expect error on client side
-	err = s.server.Write(path.Base(testPath), []byte("dummy message"))
+	err = s.server.WriteWithContext(context.Background(), path.Base(testPath), []byte("dummy message"))
 	s.NoError(err)
 	r = <-triggerC
 	s.NotNil(r)

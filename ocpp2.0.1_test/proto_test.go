@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -25,17 +26,17 @@ func (suite *OcppV2TestSuite) TestChargePointSendResponseError() {
 		// Notify server of incoming connection
 		suite.mockWsServer.NewClientHandler(channel)
 	})
-	suite.mockWsClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		rawMsg := args.Get(0)
+	suite.mockWsClient.On("WriteWithContext", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		rawMsg := args.Get(1)
 		bytes := rawMsg.([]byte)
-		err := suite.mockWsServer.MessageHandler(channel, bytes)
+		err := suite.mockWsServer.MessageHandler(context.Background(), channel, bytes)
 		assert.Nil(t, err)
 	})
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
-	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		rawMsg := args.Get(1)
+	suite.mockWsServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		rawMsg := args.Get(2)
 		bytes := rawMsg.([]byte)
-		err := suite.mockWsClient.MessageHandler(bytes)
+		err := suite.mockWsClient.MessageHandler(context.Background(), bytes)
 		assert.NoError(t, err)
 	})
 	// Run Tests
@@ -49,7 +50,7 @@ func (suite *OcppV2TestSuite) TestChargePointSendResponseError() {
 		Field1 string `validate:"required"`
 	}{Field1: ""}
 	dataListener.On("OnDataTransfer", mock.Anything).Return(dataTransferResponse, nil)
-	err = suite.csms.DataTransfer(wsId, func(response *data.DataTransferResponse, err error) {
+	err = suite.csms.DataTransfer(context.Background(), wsId, func(response *data.DataTransferResponse, err error) {
 		require.Nil(t, response)
 		require.Error(t, err)
 		resultChannel <- err
@@ -65,7 +66,7 @@ func (suite *OcppV2TestSuite) TestChargePointSendResponseError() {
 	dataTransferResponse.Data = make(chan struct{})
 	dataListener.ExpectedCalls = nil
 	dataListener.On("OnDataTransfer", mock.Anything).Return(dataTransferResponse, nil)
-	err = suite.csms.DataTransfer(wsId, func(response *data.DataTransferResponse, err error) {
+	err = suite.csms.DataTransfer(context.Background(), wsId, func(response *data.DataTransferResponse, err error) {
 		require.Nil(t, response)
 		require.Error(t, err)
 		resultChannel <- err
@@ -79,7 +80,7 @@ func (suite *OcppV2TestSuite) TestChargePointSendResponseError() {
 	// Test 3: no results in callback
 	dataListener.ExpectedCalls = nil
 	dataListener.On("OnDataTransfer", mock.Anything).Return(nil, nil)
-	err = suite.csms.DataTransfer(wsId, func(response *data.DataTransferResponse, err error) {
+	err = suite.csms.DataTransfer(context.Background(), wsId, func(response *data.DataTransferResponse, err error) {
 		require.Nil(t, response)
 		require.Error(t, err)
 		resultChannel <- err
@@ -105,17 +106,17 @@ func (suite *OcppV2TestSuite) TestCentralSystemSendResponseError() {
 		// Notify server of incoming connection
 		suite.mockWsServer.NewClientHandler(channel)
 	})
-	suite.mockWsClient.On("Write", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		rawMsg := args.Get(0)
+	suite.mockWsClient.On("WriteWithContext", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		rawMsg := args.Get(1)
 		bytes := rawMsg.([]byte)
-		err := suite.mockWsServer.MessageHandler(channel, bytes)
+		err := suite.mockWsServer.MessageHandler(context.Background(), channel, bytes)
 		assert.Nil(t, err)
 	})
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
-	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		rawMsg := args.Get(1)
+	suite.mockWsServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		rawMsg := args.Get(2)
 		bytes := rawMsg.([]byte)
-		err := suite.mockWsClient.MessageHandler(bytes)
+		err := suite.mockWsClient.MessageHandler(context.Background(), bytes)
 		assert.NoError(t, err)
 	})
 	// Run Tests
@@ -128,7 +129,7 @@ func (suite *OcppV2TestSuite) TestCentralSystemSendResponseError() {
 		Field1 string `validate:"required"`
 	}{Field1: ""}
 	dataListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(dataTransferResponse, nil)
-	response, err = suite.chargingStation.DataTransfer(nil, "vendor1")
+	response, err = suite.chargingStation.DataTransfer(context.Background(), "vendor1")
 	require.Nil(t, response)
 	require.Error(t, err)
 	require.IsType(t, &ocpp.Error{}, err)
@@ -140,7 +141,7 @@ func (suite *OcppV2TestSuite) TestCentralSystemSendResponseError() {
 	dataTransferResponse.Data = make(chan struct{})
 	dataListener.ExpectedCalls = nil
 	dataListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(dataTransferResponse, nil)
-	response, err = suite.chargingStation.DataTransfer(nil, "vendor1")
+	response, err = suite.chargingStation.DataTransfer(context.Background(), "vendor1")
 	require.Nil(t, response)
 	require.Error(t, err)
 	require.IsType(t, &ocpp.Error{}, err)
@@ -150,7 +151,7 @@ func (suite *OcppV2TestSuite) TestCentralSystemSendResponseError() {
 	// Test 3: no results in callback
 	dataListener.ExpectedCalls = nil
 	dataListener.On("OnDataTransfer", mock.AnythingOfType("string"), mock.Anything).Return(nil, nil)
-	response, err = suite.chargingStation.DataTransfer(nil, "vendor1")
+	response, err = suite.chargingStation.DataTransfer(context.Background(), "vendor1")
 	require.Nil(t, response)
 	require.Error(t, err)
 	require.IsType(t, &ocpp.Error{}, err)

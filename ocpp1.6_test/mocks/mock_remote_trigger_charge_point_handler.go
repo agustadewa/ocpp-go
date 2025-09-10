@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	remotetrigger "github.com/lorenzodonini/ocpp-go/ocpp1.6/remotetrigger"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockRemoteTriggerChargePointHandler) EXPECT() *MockRemoteTriggerCharge
 }
 
 // OnTriggerMessage provides a mock function with given fields: request
-func (_m *MockRemoteTriggerChargePointHandler) OnTriggerMessage(request *remotetrigger.TriggerMessageRequest) (*remotetrigger.TriggerMessageConfirmation, error) {
+func (_m *MockRemoteTriggerChargePointHandler) OnTriggerMessage(ctx context.Context, request *remotetrigger.TriggerMessageRequest) (*remotetrigger.TriggerMessageConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

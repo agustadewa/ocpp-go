@@ -13,6 +13,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // ---------------------- SERVER ----------------------
@@ -91,6 +93,11 @@ type Server interface {
 	//
 	// The data is queued and will be sent asynchronously in the background.
 	Write(webSocketId string, data []byte) error
+	// WriteWithContext sends a message on a specific Channel with context for tracing.
+	// If the passed ID is invalid, an error is returned.
+	//
+	// The data is queued and will be sent asynchronously in the background.
+	WriteWithContext(ctx context.Context, webSocketId string, data []byte) error
 	// AddSupportedSubprotocol adds support for a specified subprotocol.
 	// This is recommended in order to communicate the capabilities to the client during the handshake.
 	// If left empty, any subprotocol will be accepted.
@@ -132,7 +139,7 @@ type Server interface {
 type server struct {
 	connections           map[string]*webSocket
 	httpServer            *http.Server
-	messageHandler        func(ws Channel, data []byte) error
+	messageHandler        func(ctx context.Context, ws Channel, data []byte) error
 	chargePointIdResolver func(*http.Request) (string, error)
 	checkClientHandler    CheckClientHandler
 	newClientHandler      func(ws Channel)
@@ -343,14 +350,29 @@ func (s *server) stopConnections() {
 }
 
 func (s *server) Write(webSocketId string, data []byte) error {
+	return s.WriteWithContext(context.Background(), webSocketId, data)
+}
+
+func (s *server) WriteWithContext(ctx context.Context, webSocketId string, data []byte) error {
+	tracer := otel.Tracer("ocpp-go/ws")
+	ctx, span := tracer.Start(ctx, "server.write")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("websocket.id", webSocketId),
+		attribute.Int("message.size", len(data)),
+	)
+
 	s.connMutex.RLock()
 	defer s.connMutex.RUnlock()
 	w, ok := s.connections[webSocketId]
 	if !ok {
-		return fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
+		err := fmt.Errorf("couldn't write to websocket. No socket with id %v is open", webSocketId)
+		span.RecordError(err)
+		return err
 	}
 	log.Debugf("queuing data for websocket %s", webSocketId)
-	return w.Write(data)
+	return w.WriteWithContext(ctx, data)
 }
 
 func (s *server) wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -463,9 +485,9 @@ out:
 }
 
 // --------- Internal callbacks webSocket -> server ---------
-func (s *server) handleMessage(w Channel, data []byte) error {
+func (s *server) handleMessage(ctx context.Context, w Channel, data []byte) error {
 	if s.messageHandler != nil {
-		return s.messageHandler(w, data)
+		return s.messageHandler(ctx, w, data)
 	}
 	return fmt.Errorf("no message handler set")
 }

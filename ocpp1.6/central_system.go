@@ -1,6 +1,7 @@
 package ocpp16
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
@@ -61,7 +62,7 @@ func (cs *centralSystem) Errors() <-chan error {
 	return cs.errC
 }
 
-func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confirmation *core.ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType core.AvailabilityType, props ...func(request *core.ChangeAvailabilityRequest)) error {
+func (cs *centralSystem) ChangeAvailability(ctx context.Context, clientId string, callback func(confirmation *core.ChangeAvailabilityConfirmation, err error), connectorId int, availabilityType core.AvailabilityType, props ...func(request *core.ChangeAvailabilityRequest)) error {
 	request := core.NewChangeAvailabilityRequest(connectorId, availabilityType)
 	for _, fn := range props {
 		fn(request)
@@ -73,10 +74,10 @@ func (cs *centralSystem) ChangeAvailability(clientId string, callback func(confi
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(confirmation *core.ChangeConfigurationConfirmation, err error), key string, value string, props ...func(request *core.ChangeConfigurationRequest)) error {
+func (cs *centralSystem) ChangeConfiguration(ctx context.Context, clientId string, callback func(confirmation *core.ChangeConfigurationConfirmation, err error), key string, value string, props ...func(request *core.ChangeConfigurationRequest)) error {
 	request := core.NewChangeConfigurationRequest(key, value)
 	for _, fn := range props {
 		fn(request)
@@ -88,10 +89,10 @@ func (cs *centralSystem) ChangeConfiguration(clientId string, callback func(conf
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ClearCache(clientId string, callback func(confirmation *core.ClearCacheConfirmation, err error), props ...func(*core.ClearCacheRequest)) error {
+func (cs *centralSystem) ClearCache(ctx context.Context, clientId string, callback func(confirmation *core.ClearCacheConfirmation, err error), props ...func(*core.ClearCacheRequest)) error {
 	request := core.NewClearCacheRequest()
 	for _, fn := range props {
 		fn(request)
@@ -103,10 +104,10 @@ func (cs *centralSystem) ClearCache(clientId string, callback func(confirmation 
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmation *core.DataTransferConfirmation, err error), vendorId string, props ...func(request *core.DataTransferRequest)) error {
+func (cs *centralSystem) DataTransfer(ctx context.Context, clientId string, callback func(confirmation *core.DataTransferConfirmation, err error), vendorId string, props ...func(request *core.DataTransferRequest)) error {
 	request := core.NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
@@ -118,10 +119,10 @@ func (cs *centralSystem) DataTransfer(clientId string, callback func(confirmatio
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirmation *core.GetConfigurationConfirmation, err error), keys []string, props ...func(request *core.GetConfigurationRequest)) error {
+func (cs *centralSystem) GetConfiguration(ctx context.Context, clientId string, callback func(confirmation *core.GetConfigurationConfirmation, err error), keys []string, props ...func(request *core.GetConfigurationRequest)) error {
 	request := core.NewGetConfigurationRequest(keys)
 	for _, fn := range props {
 		fn(request)
@@ -133,10 +134,10 @@ func (cs *centralSystem) GetConfiguration(clientId string, callback func(confirm
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) RemoteStartTransaction(clientId string, callback func(*core.RemoteStartTransactionConfirmation, error), idTag string, props ...func(*core.RemoteStartTransactionRequest)) error {
+func (cs *centralSystem) RemoteStartTransaction(ctx context.Context, clientId string, callback func(*core.RemoteStartTransactionConfirmation, error), idTag string, props ...func(*core.RemoteStartTransactionRequest)) error {
 	request := core.NewRemoteStartTransactionRequest(idTag)
 	for _, fn := range props {
 		fn(request)
@@ -148,10 +149,10 @@ func (cs *centralSystem) RemoteStartTransaction(clientId string, callback func(*
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) RemoteStopTransaction(clientId string, callback func(*core.RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *core.RemoteStopTransactionRequest)) error {
+func (cs *centralSystem) RemoteStopTransaction(ctx context.Context, clientId string, callback func(*core.RemoteStopTransactionConfirmation, error), transactionId int, props ...func(request *core.RemoteStopTransactionRequest)) error {
 	request := core.NewRemoteStopTransactionRequest(transactionId)
 	for _, fn := range props {
 		fn(request)
@@ -163,10 +164,10 @@ func (cs *centralSystem) RemoteStopTransaction(clientId string, callback func(*c
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) Reset(clientId string, callback func(*core.ResetConfirmation, error), resetType core.ResetType, props ...func(request *core.ResetRequest)) error {
+func (cs *centralSystem) Reset(ctx context.Context, clientId string, callback func(*core.ResetConfirmation, error), resetType core.ResetType, props ...func(request *core.ResetRequest)) error {
 	request := core.NewResetRequest(resetType)
 	for _, fn := range props {
 		fn(request)
@@ -178,10 +179,10 @@ func (cs *centralSystem) Reset(clientId string, callback func(*core.ResetConfirm
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) UnlockConnector(clientId string, callback func(*core.UnlockConnectorConfirmation, error), connectorId int, props ...func(*core.UnlockConnectorRequest)) error {
+func (cs *centralSystem) UnlockConnector(ctx context.Context, clientId string, callback func(*core.UnlockConnectorConfirmation, error), connectorId int, props ...func(*core.UnlockConnectorRequest)) error {
 	request := core.NewUnlockConnectorRequest(connectorId)
 	for _, fn := range props {
 		fn(request)
@@ -193,10 +194,10 @@ func (cs *centralSystem) UnlockConnector(clientId string, callback func(*core.Un
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*localauth.GetLocalListVersionConfirmation, error), props ...func(request *localauth.GetLocalListVersionRequest)) error {
+func (cs *centralSystem) GetLocalListVersion(ctx context.Context, clientId string, callback func(*localauth.GetLocalListVersionConfirmation, error), props ...func(request *localauth.GetLocalListVersionRequest)) error {
 	request := localauth.NewGetLocalListVersionRequest()
 	for _, fn := range props {
 		fn(request)
@@ -208,10 +209,10 @@ func (cs *centralSystem) GetLocalListVersion(clientId string, callback func(*loc
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SendLocalList(clientId string, callback func(*localauth.SendLocalListConfirmation, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error {
+func (cs *centralSystem) SendLocalList(ctx context.Context, clientId string, callback func(*localauth.SendLocalListConfirmation, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error {
 	request := localauth.NewSendLocalListRequest(version, updateType)
 	for _, fn := range props {
 		fn(request)
@@ -223,10 +224,10 @@ func (cs *centralSystem) SendLocalList(clientId string, callback func(*localauth
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetDiagnostics(clientId string, callback func(*firmware.GetDiagnosticsConfirmation, error), location string, props ...func(request *firmware.GetDiagnosticsRequest)) error {
+func (cs *centralSystem) GetDiagnostics(ctx context.Context, clientId string, callback func(*firmware.GetDiagnosticsConfirmation, error), location string, props ...func(request *firmware.GetDiagnosticsRequest)) error {
 	request := firmware.NewGetDiagnosticsRequest(location)
 	for _, fn := range props {
 		fn(request)
@@ -238,10 +239,10 @@ func (cs *centralSystem) GetDiagnostics(clientId string, callback func(*firmware
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) UpdateFirmware(clientId string, callback func(*firmware.UpdateFirmwareConfirmation, error), location string, retrieveDate *types.DateTime, props ...func(request *firmware.UpdateFirmwareRequest)) error {
+func (cs *centralSystem) UpdateFirmware(ctx context.Context, clientId string, callback func(*firmware.UpdateFirmwareConfirmation, error), location string, retrieveDate *types.DateTime, props ...func(request *firmware.UpdateFirmwareRequest)) error {
 	request := firmware.NewUpdateFirmwareRequest(location, retrieveDate)
 	for _, fn := range props {
 		fn(request)
@@ -253,10 +254,10 @@ func (cs *centralSystem) UpdateFirmware(clientId string, callback func(*firmware
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ReserveNow(clientId string, callback func(*reservation.ReserveNowConfirmation, error), connectorId int, expiryDate *types.DateTime, idTag string, reservationId int, props ...func(request *reservation.ReserveNowRequest)) error {
+func (cs *centralSystem) ReserveNow(ctx context.Context, clientId string, callback func(*reservation.ReserveNowConfirmation, error), connectorId int, expiryDate *types.DateTime, idTag string, reservationId int, props ...func(request *reservation.ReserveNowRequest)) error {
 	request := reservation.NewReserveNowRequest(connectorId, expiryDate, idTag, reservationId)
 	for _, fn := range props {
 		fn(request)
@@ -268,10 +269,10 @@ func (cs *centralSystem) ReserveNow(clientId string, callback func(*reservation.
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) CancelReservation(clientId string, callback func(*reservation.CancelReservationConfirmation, error), reservationId int, props ...func(request *reservation.CancelReservationRequest)) error {
+func (cs *centralSystem) CancelReservation(ctx context.Context, clientId string, callback func(*reservation.CancelReservationConfirmation, error), reservationId int, props ...func(request *reservation.CancelReservationRequest)) error {
 	request := reservation.NewCancelReservationRequest(reservationId)
 	for _, fn := range props {
 		fn(request)
@@ -283,10 +284,10 @@ func (cs *centralSystem) CancelReservation(clientId string, callback func(*reser
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) TriggerMessage(clientId string, callback func(*remotetrigger.TriggerMessageConfirmation, error), requestedMessage remotetrigger.MessageTrigger, props ...func(request *remotetrigger.TriggerMessageRequest)) error {
+func (cs *centralSystem) TriggerMessage(ctx context.Context, clientId string, callback func(*remotetrigger.TriggerMessageConfirmation, error), requestedMessage remotetrigger.MessageTrigger, props ...func(request *remotetrigger.TriggerMessageRequest)) error {
 	request := remotetrigger.NewTriggerMessageRequest(requestedMessage)
 	for _, fn := range props {
 		fn(request)
@@ -298,10 +299,10 @@ func (cs *centralSystem) TriggerMessage(clientId string, callback func(*remotetr
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SetChargingProfile(clientId string, callback func(*smartcharging.SetChargingProfileConfirmation, error), connectorId int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error {
+func (cs *centralSystem) SetChargingProfile(ctx context.Context, clientId string, callback func(*smartcharging.SetChargingProfileConfirmation, error), connectorId int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error {
 	request := smartcharging.NewSetChargingProfileRequest(connectorId, chargingProfile)
 	for _, fn := range props {
 		fn(request)
@@ -313,10 +314,10 @@ func (cs *centralSystem) SetChargingProfile(clientId string, callback func(*smar
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) ClearChargingProfile(clientId string, callback func(*smartcharging.ClearChargingProfileConfirmation, error), props ...func(request *smartcharging.ClearChargingProfileRequest)) error {
+func (cs *centralSystem) ClearChargingProfile(ctx context.Context, clientId string, callback func(*smartcharging.ClearChargingProfileConfirmation, error), props ...func(request *smartcharging.ClearChargingProfileRequest)) error {
 	request := smartcharging.NewClearChargingProfileRequest()
 	for _, fn := range props {
 		fn(request)
@@ -328,10 +329,10 @@ func (cs *centralSystem) ClearChargingProfile(clientId string, callback func(*sm
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*smartcharging.GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *smartcharging.GetCompositeScheduleRequest)) error {
+func (cs *centralSystem) GetCompositeSchedule(ctx context.Context, clientId string, callback func(*smartcharging.GetCompositeScheduleConfirmation, error), connectorId int, duration int, props ...func(request *smartcharging.GetCompositeScheduleRequest)) error {
 	request := smartcharging.NewGetCompositeScheduleRequest(connectorId, duration)
 	for _, fn := range props {
 		fn(request)
@@ -343,10 +344,10 @@ func (cs *centralSystem) GetCompositeSchedule(clientId string, callback func(*sm
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) TriggerMessageExtended(clientId string, callback func(*extendedtriggermessage.ExtendedTriggerMessageResponse, error), requestedMessage extendedtriggermessage.ExtendedTriggerMessageType, props ...func(request *extendedtriggermessage.ExtendedTriggerMessageRequest)) error {
+func (cs *centralSystem) TriggerMessageExtended(ctx context.Context, clientId string, callback func(*extendedtriggermessage.ExtendedTriggerMessageResponse, error), requestedMessage extendedtriggermessage.ExtendedTriggerMessageType, props ...func(request *extendedtriggermessage.ExtendedTriggerMessageRequest)) error {
 	request := extendedtriggermessage.NewExtendedTriggerMessageRequest(requestedMessage)
 	for _, fn := range props {
 		fn(request)
@@ -358,11 +359,11 @@ func (cs *centralSystem) TriggerMessageExtended(clientId string, callback func(*
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 
 }
 
-func (cs *centralSystem) CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), csr string, props ...func(request *security.CertificateSignedRequest)) error {
+func (cs *centralSystem) CertificateSigned(ctx context.Context, clientId string, callback func(*security.CertificateSignedResponse, error), csr string, props ...func(request *security.CertificateSignedRequest)) error {
 	request := security.NewCertificateSignedRequest(csr)
 	for _, fn := range props {
 		fn(request)
@@ -374,10 +375,10 @@ func (cs *centralSystem) CertificateSigned(clientId string, callback func(*secur
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) SignedUpdateFirmware(clientId string, callback func(*securefirmware.SignedUpdateFirmwareResponse, error), requestId int, firmware securefirmware.Firmware, props ...func(request *securefirmware.SignedUpdateFirmwareRequest)) error {
+func (cs *centralSystem) SignedUpdateFirmware(ctx context.Context, clientId string, callback func(*securefirmware.SignedUpdateFirmwareResponse, error), requestId int, firmware securefirmware.Firmware, props ...func(request *securefirmware.SignedUpdateFirmwareRequest)) error {
 	request := securefirmware.NewSignedUpdateFirmwareRequest(requestId, firmware)
 	for _, fn := range props {
 		fn(request)
@@ -389,10 +390,10 @@ func (cs *centralSystem) SignedUpdateFirmware(clientId string, callback func(*se
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetInstalledCertificateIds(clientId string, callback func(*certificates.GetInstalledCertificateIdsResponse, error), certificateType types.CertificateUse, props ...func(request *certificates.GetInstalledCertificateIdsRequest)) error {
+func (cs *centralSystem) GetInstalledCertificateIds(ctx context.Context, clientId string, callback func(*certificates.GetInstalledCertificateIdsResponse, error), certificateType types.CertificateUse, props ...func(request *certificates.GetInstalledCertificateIdsRequest)) error {
 	request := certificates.NewGetInstalledCertificateIdsRequest(certificateType)
 	for _, fn := range props {
 		fn(request)
@@ -404,10 +405,10 @@ func (cs *centralSystem) GetInstalledCertificateIds(clientId string, callback fu
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) InstallCertificate(clientId string, callback func(*certificates.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(request *certificates.InstallCertificateRequest)) error {
+func (cs *centralSystem) InstallCertificate(ctx context.Context, clientId string, callback func(*certificates.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(request *certificates.InstallCertificateRequest)) error {
 	request := certificates.NewInstallCertificateRequest(certificateType, certificate)
 	for _, fn := range props {
 		fn(request)
@@ -419,10 +420,10 @@ func (cs *centralSystem) InstallCertificate(clientId string, callback func(*cert
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) DeleteCertificate(clientId string, callback func(*certificates.DeleteCertificateResponse, error), certificateHashData types.CertificateHashData, props ...func(request *certificates.DeleteCertificateRequest)) error {
+func (cs *centralSystem) DeleteCertificate(ctx context.Context, clientId string, callback func(*certificates.DeleteCertificateResponse, error), certificateHashData types.CertificateHashData, props ...func(request *certificates.DeleteCertificateRequest)) error {
 	request := certificates.NewDeleteCertificateRequest(certificateHashData)
 	for _, fn := range props {
 		fn(request)
@@ -434,10 +435,10 @@ func (cs *centralSystem) DeleteCertificate(clientId string, callback func(*certi
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *centralSystem) GetLog(clientId string, callback func(*logging.GetLogResponse, error), logType logging.LogType, requestID int, logParameters logging.LogParameters, props ...func(request *logging.GetLogRequest)) error {
+func (cs *centralSystem) GetLog(ctx context.Context, clientId string, callback func(*logging.GetLogResponse, error), logType logging.LogType, requestID int, logParameters logging.LogParameters, props ...func(request *logging.GetLogRequest)) error {
 	request := logging.NewGetLogRequest(logType, requestID, logParameters)
 	for _, fn := range props {
 		fn(request)
@@ -449,7 +450,7 @@ func (cs *centralSystem) GetLog(clientId string, callback func(*logging.GetLogRe
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
 func (cs *centralSystem) SetSecurityHandler(handler security.CentralSystemHandler) {
@@ -508,7 +509,7 @@ func (cs *centralSystem) SetChargePointDisconnectedHandler(handler ChargePointCo
 	})
 }
 
-func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
+func (cs *centralSystem) SendRequestAsync(ctx context.Context, clientId string, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	featureName := request.GetFeatureName()
 	if _, found := cs.server.GetProfileForFeature(featureName); !found {
 		return fmt.Errorf("feature %v is unsupported on central system (missing profile), cannot send request", featureName)
@@ -531,7 +532,7 @@ func (cs *centralSystem) SendRequestAsync(clientId string, request ocpp.Request,
 	}
 
 	send := func() error {
-		return cs.server.SendRequest(clientId, request)
+		return cs.server.SendRequestWithContext(ctx, clientId, request)
 	}
 	return cs.callbackQueue.TryQueue(clientId, send, callback)
 }
@@ -545,17 +546,17 @@ func (cs *centralSystem) Stop() {
 	cs.server.Stop()
 }
 
-func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Response, err error, requestId string) {
+func (cs *centralSystem) sendResponse(ctx context.Context, chargePointId string, confirmation ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
 		if ocppError, ok := err.(*ocpp.Error); ok {
-			err = cs.server.SendError(chargePointId, requestId, ocppError.Code, ocppError.Description, nil)
+			err = cs.server.SendErrorWithContext(ctx, chargePointId, requestId, ocppError.Code, ocppError.Description, nil)
 		} else {
-			err = cs.server.SendError(chargePointId, requestId, ocppj.InternalError, err.Error(), nil)
+			err = cs.server.SendErrorWithContext(ctx, chargePointId, requestId, ocppj.InternalError, err.Error(), nil)
 		}
 		if err != nil {
 			// Error while sending an error. Will attempt to send a default error instead
-			cs.server.HandleFailedResponseError(chargePointId, requestId, err, "")
+			cs.server.HandleFailedResponseError(ctx, chargePointId, requestId, err, "")
 			// Notify client implementation
 			err = fmt.Errorf("error replying cp %s to request %s with 'internal error': %w", chargePointId, requestId, err)
 			cs.error(err)
@@ -575,80 +576,80 @@ func (cs *centralSystem) sendResponse(chargePointId string, confirmation ocpp.Re
 	err = cs.server.SendResponse(chargePointId, requestId, confirmation)
 	if err != nil {
 		// Error while sending an error. Will attempt to send a default error instead
-		cs.server.HandleFailedResponseError(chargePointId, requestId, err, confirmation.GetFeatureName())
+		cs.server.HandleFailedResponseError(ctx, chargePointId, requestId, err, confirmation.GetFeatureName())
 		// Notify client implementation
 		err = fmt.Errorf("error replying cp %s to request %s: %w", chargePointId, requestId, err)
 		cs.error(err)
 	}
 }
 
-func (cs *centralSystem) notImplementedError(chargePointId string, requestId string, action string) {
-	err := cs.server.SendError(chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+func (cs *centralSystem) notImplementedError(ctx context.Context, chargePointId string, requestId string, action string) {
+	err := cs.server.SendErrorWithContext(ctx, chargePointId, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
 		err = fmt.Errorf("replying cp %s to request %s with 'not implemented': %w", chargePointId, requestId, err)
 		cs.error(err)
 	}
 }
 
-func (cs *centralSystem) notSupportedError(chargePointId string, requestId string, action string) {
-	err := cs.server.SendError(chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
+func (cs *centralSystem) notSupportedError(ctx context.Context, chargePointId string, requestId string, action string) {
+	err := cs.server.SendErrorWithContext(ctx, chargePointId, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on central system", action), nil)
 	if err != nil {
 		err = fmt.Errorf("replying cp %s to request %s with 'not supported': %w", chargePointId, requestId, err)
 		cs.error(err)
 	}
 }
 
-func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection, request ocpp.Request, requestId string, action string) {
+func (cs *centralSystem) handleIncomingRequest(ctx context.Context, chargePoint ChargePointConnection, request ocpp.Request, requestId string, action string) {
 	profile, found := cs.server.GetProfileForFeature(action)
 	// Check whether action is supported and a handler for it exists
 	if !found {
-		cs.notImplementedError(chargePoint.ID(), requestId, action)
+		cs.notImplementedError(ctx, chargePoint.ID(), requestId, action)
 		return
 	} else {
 		switch profile.Name {
 		case core.ProfileName:
 			if cs.coreHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		case localauth.ProfileName:
 			if cs.localAuthListHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		case firmware.ProfileName:
 			if cs.firmwareHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		case reservation.ProfileName:
 			if cs.reservationHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		case remotetrigger.ProfileName:
 			if cs.remoteTriggerHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		case smartcharging.ProfileName:
 			if cs.smartChargingHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		case logging.ProfileName:
 			if cs.logHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		case security.ProfileName:
 			if cs.securityHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		case securefirmware.ProfileName:
 			if cs.secureFirmwareHandler == nil {
-				cs.notSupportedError(chargePoint.ID(), requestId, action)
+				cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 				return
 			}
 		}
@@ -659,38 +660,38 @@ func (cs *centralSystem) handleIncomingRequest(chargePoint ChargePointConnection
 	go func() {
 		switch action {
 		case core.BootNotificationFeatureName:
-			confirmation, err = cs.coreHandler.OnBootNotification(chargePoint.ID(), request.(*core.BootNotificationRequest))
+			confirmation, err = cs.coreHandler.OnBootNotification(ctx, chargePoint.ID(), request.(*core.BootNotificationRequest))
 		case core.AuthorizeFeatureName:
-			confirmation, err = cs.coreHandler.OnAuthorize(chargePoint.ID(), request.(*core.AuthorizeRequest))
+			confirmation, err = cs.coreHandler.OnAuthorize(ctx, chargePoint.ID(), request.(*core.AuthorizeRequest))
 		case core.DataTransferFeatureName:
-			confirmation, err = cs.coreHandler.OnDataTransfer(chargePoint.ID(), request.(*core.DataTransferRequest))
+			confirmation, err = cs.coreHandler.OnDataTransfer(ctx, chargePoint.ID(), request.(*core.DataTransferRequest))
 		case core.HeartbeatFeatureName:
-			confirmation, err = cs.coreHandler.OnHeartbeat(chargePoint.ID(), request.(*core.HeartbeatRequest))
+			confirmation, err = cs.coreHandler.OnHeartbeat(ctx, chargePoint.ID(), request.(*core.HeartbeatRequest))
 		case core.MeterValuesFeatureName:
-			confirmation, err = cs.coreHandler.OnMeterValues(chargePoint.ID(), request.(*core.MeterValuesRequest))
+			confirmation, err = cs.coreHandler.OnMeterValues(ctx, chargePoint.ID(), request.(*core.MeterValuesRequest))
 		case core.StartTransactionFeatureName:
-			confirmation, err = cs.coreHandler.OnStartTransaction(chargePoint.ID(), request.(*core.StartTransactionRequest))
+			confirmation, err = cs.coreHandler.OnStartTransaction(ctx, chargePoint.ID(), request.(*core.StartTransactionRequest))
 		case core.StopTransactionFeatureName:
-			confirmation, err = cs.coreHandler.OnStopTransaction(chargePoint.ID(), request.(*core.StopTransactionRequest))
+			confirmation, err = cs.coreHandler.OnStopTransaction(ctx, chargePoint.ID(), request.(*core.StopTransactionRequest))
 		case core.StatusNotificationFeatureName:
-			confirmation, err = cs.coreHandler.OnStatusNotification(chargePoint.ID(), request.(*core.StatusNotificationRequest))
+			confirmation, err = cs.coreHandler.OnStatusNotification(ctx, chargePoint.ID(), request.(*core.StatusNotificationRequest))
 		case firmware.DiagnosticsStatusNotificationFeatureName:
-			confirmation, err = cs.firmwareHandler.OnDiagnosticsStatusNotification(chargePoint.ID(), request.(*firmware.DiagnosticsStatusNotificationRequest))
+			confirmation, err = cs.firmwareHandler.OnDiagnosticsStatusNotification(ctx, chargePoint.ID(), request.(*firmware.DiagnosticsStatusNotificationRequest))
 		case firmware.FirmwareStatusNotificationFeatureName:
-			confirmation, err = cs.firmwareHandler.OnFirmwareStatusNotification(chargePoint.ID(), request.(*firmware.FirmwareStatusNotificationRequest))
+			confirmation, err = cs.firmwareHandler.OnFirmwareStatusNotification(ctx, chargePoint.ID(), request.(*firmware.FirmwareStatusNotificationRequest))
 		case security.SignCertificateFeatureName:
-			confirmation, err = cs.securityHandler.OnSignCertificate(chargePoint.ID(), request.(*security.SignCertificateRequest))
+			confirmation, err = cs.securityHandler.OnSignCertificate(ctx, chargePoint.ID(), request.(*security.SignCertificateRequest))
 		case security.SecurityEventNotificationFeatureName:
-			confirmation, err = cs.securityHandler.OnSecurityEventNotification(chargePoint.ID(), request.(*security.SecurityEventNotificationRequest))
+			confirmation, err = cs.securityHandler.OnSecurityEventNotification(ctx, chargePoint.ID(), request.(*security.SecurityEventNotificationRequest))
 		case logging.LogStatusNotificationFeatureName:
-			confirmation, err = cs.logHandler.OnLogStatusNotification(chargePoint.ID(), request.(*logging.LogStatusNotificationRequest))
+			confirmation, err = cs.logHandler.OnLogStatusNotification(ctx, chargePoint.ID(), request.(*logging.LogStatusNotificationRequest))
 		case securefirmware.SignedFirmwareStatusNotificationFeatureName:
-			confirmation, err = cs.secureFirmwareHandler.OnSignedFirmwareStatusNotification(chargePoint.ID(), request.(*securefirmware.SignedFirmwareStatusNotificationRequest))
+			confirmation, err = cs.secureFirmwareHandler.OnSignedFirmwareStatusNotification(ctx, chargePoint.ID(), request.(*securefirmware.SignedFirmwareStatusNotificationRequest))
 		default:
-			cs.notSupportedError(chargePoint.ID(), requestId, action)
+			cs.notSupportedError(ctx, chargePoint.ID(), requestId, action)
 			return
 		}
-		cs.sendResponse(chargePoint.ID(), confirmation, err, requestId)
+		cs.sendResponse(ctx, chargePoint.ID(), confirmation, err, requestId)
 	}()
 }
 

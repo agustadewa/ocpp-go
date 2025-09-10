@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	extendedtriggermessage "github.com/lorenzodonini/ocpp-go/ocpp1.6/extendedtriggermessage"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockExtendedTriggerMessageChargePointHandler) EXPECT() *MockExtendedTr
 }
 
 // OnExtendedTriggerMessage provides a mock function with given fields: request
-func (_m *MockExtendedTriggerMessageChargePointHandler) OnExtendedTriggerMessage(request *extendedtriggermessage.ExtendedTriggerMessageRequest) (*extendedtriggermessage.ExtendedTriggerMessageResponse, error) {
+func (_m *MockExtendedTriggerMessageChargePointHandler) OnExtendedTriggerMessage(ctx context.Context, request *extendedtriggermessage.ExtendedTriggerMessageRequest) (*extendedtriggermessage.ExtendedTriggerMessageResponse, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

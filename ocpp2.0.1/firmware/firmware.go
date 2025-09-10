@@ -10,9 +10,9 @@ import (
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Firmware profile.
 type CSMSHandler interface {
 	// OnFirmwareStatusNotification is called on the CSMS whenever a FirmwareStatusNotificationRequest is received from a charging station.
-	OnFirmwareStatusNotification(chargingStationID string, request *FirmwareStatusNotificationRequest) (response *FirmwareStatusNotificationResponse, err error)
+	OnFirmwareStatusNotification(ctx context.Context, chargingStationID string, request *FirmwareStatusNotificationRequest) (response *FirmwareStatusNotificationResponse, err error)
 	// OnPublishFirmwareStatusNotification is called on the CSMS whenever a PublishFirmwareStatusNotificationRequest is received from a local controller.
-	OnPublishFirmwareStatusNotification(chargingStationID string, request *PublishFirmwareStatusNotificationRequest) (response *PublishFirmwareStatusNotificationResponse, err error)
+	OnPublishFirmwareStatusNotification(ctx context.Context, chargingStationID string, request *PublishFirmwareStatusNotificationRequest) (response *PublishFirmwareStatusNotificationResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Firmware profile.

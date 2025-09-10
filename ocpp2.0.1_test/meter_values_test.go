@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -78,7 +79,7 @@ func (suite *OcppV2TestSuite) TestMeterValuesE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
-	r, err := suite.chargingStation.MeterValues(nil, evseId, meterValues)
+	r, err := suite.chargingStation.MeterValues(context.Background(), evseId, meterValues)
 	assert.Nil(t, err)
 	assert.NotNil(t, r)
 }

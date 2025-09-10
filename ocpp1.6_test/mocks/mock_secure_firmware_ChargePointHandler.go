@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	securefirmware "github.com/lorenzodonini/ocpp-go/ocpp1.6/securefirmware"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockSecureFirmwareChargePointHandler) EXPECT() *MockSecureFirmwareChar
 }
 
 // OnSignedUpdateFirmware provides a mock function with given fields: request
-func (_m *MockSecureFirmwareChargePointHandler) OnSignedUpdateFirmware(request *securefirmware.SignedUpdateFirmwareRequest) (*securefirmware.SignedUpdateFirmwareResponse, error) {
+func (_m *MockSecureFirmwareChargePointHandler) OnSignedUpdateFirmware(ctx context.Context, request *securefirmware.SignedUpdateFirmwareRequest) (*securefirmware.SignedUpdateFirmwareResponse, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

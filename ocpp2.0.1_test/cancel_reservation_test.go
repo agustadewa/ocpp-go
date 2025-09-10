@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
@@ -59,7 +60,7 @@ func (suite *OcppV2TestSuite) TestCancelReservationE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.CancelReservation(wsId, func(confirmation *reservation.CancelReservationResponse, err error) {
+	err = suite.csms.CancelReservation(context.Background(), wsId, func(confirmation *reservation.CancelReservationResponse, err error) {
 		require.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		require.Equal(t, status, confirmation.Status)

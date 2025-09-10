@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	firmware "github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockFirmwareCentralSystemHandler) EXPECT() *MockFirmwareCentralSystemH
 }
 
 // OnDiagnosticsStatusNotification provides a mock function with given fields: chargePointId, request
-func (_m *MockFirmwareCentralSystemHandler) OnDiagnosticsStatusNotification(chargePointId string, request *firmware.DiagnosticsStatusNotificationRequest) (*firmware.DiagnosticsStatusNotificationConfirmation, error) {
+func (_m *MockFirmwareCentralSystemHandler) OnDiagnosticsStatusNotification(ctx context.Context, chargePointId string, request *firmware.DiagnosticsStatusNotificationRequest) (*firmware.DiagnosticsStatusNotificationConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {
@@ -80,7 +82,7 @@ func (_c *MockFirmwareCentralSystemHandler_OnDiagnosticsStatusNotification_Call)
 }
 
 // OnFirmwareStatusNotification provides a mock function with given fields: chargePointId, request
-func (_m *MockFirmwareCentralSystemHandler) OnFirmwareStatusNotification(chargePointId string, request *firmware.FirmwareStatusNotificationRequest) (*firmware.FirmwareStatusNotificationConfirmation, error) {
+func (_m *MockFirmwareCentralSystemHandler) OnFirmwareStatusNotification(ctx context.Context, chargePointId string, request *firmware.FirmwareStatusNotificationRequest) (*firmware.FirmwareStatusNotificationConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {

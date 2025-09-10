@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -63,7 +64,7 @@ func (suite *OcppV16TestSuite) TestChangeConfigurationE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.ChangeConfiguration(wsId, func(confirmation *core.ChangeConfigurationConfirmation, err error) {
+	err = suite.centralSystem.ChangeConfiguration(context.Background(), wsId, func(confirmation *core.ChangeConfigurationConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

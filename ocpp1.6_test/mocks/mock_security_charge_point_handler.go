@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	security "github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockSecurityChargePointHandler) EXPECT() *MockSecurityChargePointHandl
 }
 
 // OnCertificateSigned provides a mock function with given fields: request
-func (_m *MockSecurityChargePointHandler) OnCertificateSigned(request *security.CertificateSignedRequest) (*security.CertificateSignedResponse, error) {
+func (_m *MockSecurityChargePointHandler) OnCertificateSigned(ctx context.Context, request *security.CertificateSignedRequest) (*security.CertificateSignedResponse, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

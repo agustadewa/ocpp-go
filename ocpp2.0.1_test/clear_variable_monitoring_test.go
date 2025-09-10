@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -65,7 +66,7 @@ func (suite *OcppV2TestSuite) TestClearVariableMonitoringE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.ClearVariableMonitoring(wsId, func(confirmation *diagnostics.ClearVariableMonitoringResponse, err error) {
+	err = suite.csms.ClearVariableMonitoring(context.Background(), wsId, func(confirmation *diagnostics.ClearVariableMonitoringResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		require.Len(t, confirmation.ClearMonitoringResult, 2)

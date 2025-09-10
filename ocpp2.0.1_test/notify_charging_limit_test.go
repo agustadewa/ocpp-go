@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -93,7 +94,7 @@ func (suite *OcppV2TestSuite) TestNotifyChargingLimitE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	r, err := suite.chargingStation.NotifyChargingLimit(nil, chargingLimit, func(request *smartcharging.NotifyChargingLimitRequest) {
+	r, err := suite.chargingStation.NotifyChargingLimit(context.Background(), chargingLimit, func(request *smartcharging.NotifyChargingLimitRequest) {
 		request.EvseID = evseID
 		request.ChargingSchedule = chargingSchedules
 	})

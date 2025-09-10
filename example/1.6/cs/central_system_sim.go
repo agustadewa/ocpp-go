@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"os"
@@ -92,7 +93,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("couldn't reserve connector %v: %v", connectorID, confirmation.Status)
 		}
 	}
-	e := centralSystem.ReserveNow(chargePointID, cb1, connectorID, expiryDate, clientIdTag, reservationID)
+	e := centralSystem.ReserveNow(context.Background(), chargePointID, cb1, connectorID, expiryDate, clientIdTag, reservationID)
 	if e != nil {
 		logDefault(chargePointID, reservation.ReserveNowFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -109,7 +110,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("couldn't cancel reservation %v", reservationID)
 		}
 	}
-	e = centralSystem.CancelReservation(chargePointID, cb2, reservationID)
+	e = centralSystem.CancelReservation(context.Background(), chargePointID, cb2, reservationID)
 	if e != nil {
 		logDefault(chargePointID, reservation.ReserveNowFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -124,7 +125,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("current local list version: %v", confirmation.ListVersion)
 		}
 	}
-	e = centralSystem.GetLocalListVersion(chargePointID, cb3)
+	e = centralSystem.GetLocalListVersion(context.Background(), chargePointID, cb3)
 	if e != nil {
 		logDefault(chargePointID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -145,7 +146,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("updated configuration for key %v to: %v", configKey, configValue)
 		}
 	}
-	e = centralSystem.ChangeConfiguration(chargePointID, cb4, configKey, configValue)
+	e = centralSystem.ChangeConfiguration(context.Background(), chargePointID, cb4, configKey, configValue)
 	if e != nil {
 		logDefault(chargePointID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -163,7 +164,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v trigger was rejected", core.HeartbeatFeatureName)
 		}
 	}
-	e = centralSystem.TriggerMessage(chargePointID, cb5, core.HeartbeatFeatureName)
+	e = centralSystem.TriggerMessage(context.Background(), chargePointID, cb5, core.HeartbeatFeatureName)
 	if e != nil {
 		logDefault(chargePointID, remotetrigger.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -181,7 +182,7 @@ func exampleRoutine(chargePointID string, handler *CentralSystemHandler) {
 			logDefault(chargePointID, confirmation.GetFeatureName()).Infof("%v trigger was rejected", firmware.GetDiagnosticsFeatureName)
 		}
 	}
-	e = centralSystem.TriggerMessage(chargePointID, cb6, firmware.DiagnosticsStatusNotificationFeatureName)
+	e = centralSystem.TriggerMessage(context.Background(), chargePointID, cb6, firmware.DiagnosticsStatusNotificationFeatureName)
 	if e != nil {
 		logDefault(chargePointID, remotetrigger.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return

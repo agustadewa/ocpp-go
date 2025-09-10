@@ -1,6 +1,7 @@
 package ocppj_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -74,6 +75,11 @@ func (websocketServer *MockWebsocketServer) Write(webSocketId string, data []byt
 	return args.Error(0)
 }
 
+func (websocketServer *MockWebsocketServer) WriteWithContext(ctx context.Context, webSocketId string, data []byte) error {
+	args := websocketServer.MethodCalled("WriteWithContext", ctx, webSocketId, data)
+	return args.Error(0)
+}
+
 func (websocketServer *MockWebsocketServer) SetMessageHandler(handler ws.MessageHandler) {
 	websocketServer.MessageHandler = handler
 }
@@ -115,7 +121,7 @@ func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler ws.Che
 type MockWebsocketClient struct {
 	mock.Mock
 	ws.Client
-	MessageHandler      func(data []byte) error
+	MessageHandler      func(ctx context.Context, data []byte) error
 	ReconnectedHandler  func()
 	DisconnectedHandler func(err error)
 	errC                chan error
@@ -130,7 +136,7 @@ func (websocketClient *MockWebsocketClient) Stop() {
 	websocketClient.MethodCalled("Stop")
 }
 
-func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data []byte) error) {
+func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(ctx context.Context, data []byte) error) {
 	websocketClient.MessageHandler = handler
 }
 
@@ -150,6 +156,11 @@ func (websocketClient *MockWebsocketClient) ThrowError(err error) {
 
 func (websocketClient *MockWebsocketClient) Write(data []byte) error {
 	args := websocketClient.MethodCalled("Write", data)
+	return args.Error(0)
+}
+
+func (websocketClient *MockWebsocketClient) WriteWithContext(ctx context.Context, data []byte) error {
+	args := websocketClient.MethodCalled("WriteWithContext", ctx, data)
 	return args.Error(0)
 }
 
@@ -235,16 +246,16 @@ func (m *MockUnsupportedResponse) GetFeatureName() string {
 
 // ---------------------- COMMON UTILITY METHODS ----------------------
 
-func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error)) ws.Server {
+func NewWebsocketServer(t *testing.T, onMessage func(ctx context.Context, data []byte) ([]byte, error)) ws.Server {
 	wsServer := ws.NewServer()
-	wsServer.SetMessageHandler(func(ws ws.Channel, data []byte) error {
+	wsServer.SetMessageHandler(func(ctx context.Context, ws ws.Channel, data []byte) error {
 		assert.NotNil(t, ws)
 		assert.NotNil(t, data)
 		if onMessage != nil {
-			response, err := onMessage(data)
+			response, err := onMessage(ctx, data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsServer.Write(ws.ID(), data)
+				err = wsServer.WriteWithContext(ctx, ws.ID(), data)
 				assert.Nil(t, err)
 			}
 		}
@@ -253,15 +264,15 @@ func NewWebsocketServer(t *testing.T, onMessage func(data []byte) ([]byte, error
 	return wsServer
 }
 
-func NewWebsocketClient(t *testing.T, onMessage func(data []byte) ([]byte, error)) ws.Client {
+func NewWebsocketClient(t *testing.T, onMessage func(ctx context.Context, data []byte) ([]byte, error)) ws.Client {
 	wsClient := ws.NewClient()
-	wsClient.SetMessageHandler(func(data []byte) error {
+	wsClient.SetMessageHandler(func(ctx context.Context, data []byte) error {
 		assert.NotNil(t, data)
 		if onMessage != nil {
-			response, err := onMessage(data)
+			response, err := onMessage(ctx, data)
 			assert.Nil(t, err)
 			if response != nil {
-				err = wsClient.Write(data)
+				err = wsClient.WriteWithContext(ctx, data)
 				assert.Nil(t, err)
 			}
 		}

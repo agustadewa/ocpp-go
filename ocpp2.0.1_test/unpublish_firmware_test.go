@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -59,7 +60,7 @@ func (suite *OcppV2TestSuite) TestUnpublishFirmwareE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.UnpublishFirmware(wsId, func(resp *firmware.UnpublishFirmwareResponse, err error) {
+	err = suite.csms.UnpublishFirmware(context.Background(), wsId, func(resp *firmware.UnpublishFirmwareResponse, err error) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, unpublishFirmwareResponse.Status, resp.Status)

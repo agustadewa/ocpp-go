@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -63,7 +64,7 @@ func (suite *OcppV16TestSuite) TestChangeAvailabilityE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.ChangeAvailability(wsId, func(confirmation *core.ChangeAvailabilityConfirmation, err error) {
+	err = suite.centralSystem.ChangeAvailability(context.Background(), wsId, func(confirmation *core.ChangeAvailabilityConfirmation, err error) {
 		require.NotNil(t, confirmation)
 		require.Nil(t, err)
 		assert.Equal(t, status, confirmation.Status)

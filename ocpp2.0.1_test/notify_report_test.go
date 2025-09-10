@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -154,7 +155,7 @@ func (suite *OcppV2TestSuite) TestNotifyReportE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.NotifyReport(nil, requestID, generatedAt, seqNo, func(request *provisioning.NotifyReportRequest) {
+	response, err := suite.chargingStation.NotifyReport(context.Background(), requestID, generatedAt, seqNo, func(request *provisioning.NotifyReportRequest) {
 		request.ReportData = []provisioning.ReportData{reportData}
 		request.Tbc = tbc
 	})

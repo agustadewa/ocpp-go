@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -76,7 +77,7 @@ func (suite *OcppV16TestSuite) TestBootNotificationE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.BootNotification(chargePointModel, chargePointVendor)
+	confirmation, err := suite.chargePoint.BootNotification(context.Background(), chargePointModel, chargePointVendor)
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
 	assert.Equal(t, registrationStatus, confirmation.Status)

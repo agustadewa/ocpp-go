@@ -476,7 +476,7 @@ func (cs *chargingStation) SendRequest(ctx context.Context, request ocpp.Request
 	// Create channel and pass it to a callback function, for retrieving asynchronous response
 	asyncResponseC := make(chan asyncResponse, 1)
 	send := func() error {
-		return cs.client.SendRequest(request)
+		return cs.client.SendRequestWithContext(ctx, request)
 	}
 	err := cs.callbacks.TryQueue("main", send, func(confirmation ocpp.Response, err error) {
 		asyncResponseC <- asyncResponse{r: confirmation, e: err}
@@ -491,7 +491,7 @@ func (cs *chargingStation) SendRequest(ctx context.Context, request ocpp.Request
 	return asyncResult.r, asyncResult.e
 }
 
-func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(response ocpp.Response, err error)) error {
+func (cs *chargingStation) SendRequestAsync(ctx context.Context, request ocpp.Request, callback func(response ocpp.Response, err error)) error {
 	featureName := request.GetFeatureName()
 	if _, found := cs.client.GetProfileForFeature(featureName); !found {
 		return fmt.Errorf("feature %v is unsupported on charging station (missing profile), cannot send request", featureName)
@@ -528,7 +528,7 @@ func (cs *chargingStation) SendRequestAsync(request ocpp.Request, callback func(
 	}
 	// Response will be retrieved asynchronously via asyncHandler
 	send := func() error {
-		return cs.client.SendRequest(request)
+		return cs.client.SendRequestWithContext(ctx, request)
 	}
 	err := cs.callbacks.TryQueue("main", send, callback)
 	return err
@@ -557,12 +557,12 @@ func (cs *chargingStation) asyncCallbackHandler() {
 	}
 }
 
-func (cs *chargingStation) sendResponse(response ocpp.Response, err error, requestId string) {
+func (cs *chargingStation) sendResponse(ctx context.Context, response ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
 		var ocppError *ocpp.Error
 		if errors.As(err, &ocppError) {
-			err = cs.client.SendError(requestId, ocppError.Code, ocppError.Description, nil)
+			err = cs.client.SendErrorWithContext(ctx, requestId, ocppError.Code, ocppError.Description, nil)
 		}
 		if err != nil {
 			// Error while sending an error. Will attempt to send a default error instead
@@ -577,13 +577,13 @@ func (cs *chargingStation) sendResponse(response ocpp.Response, err error, reque
 	if response == nil || reflect.ValueOf(response).IsNil() {
 		err = fmt.Errorf("empty response to request %s", requestId)
 		// Sending a dummy error to server instead, then notify client implementation
-		_ = cs.client.SendError(requestId, ocppj.GenericError, err.Error(), nil)
+		_ = cs.client.SendErrorWithContext(ctx, requestId, ocppj.GenericError, err.Error(), nil)
 		cs.error(err)
 		return
 	}
 
 	// send confirmation response
-	err = cs.client.SendResponse(requestId, response)
+	err = cs.client.SendResponseWithContext(ctx, requestId, response)
 	if err != nil {
 		// Error while sending an error. Will attempt to send a default error instead
 		cs.client.HandleFailedResponseError(requestId, err, response.GetFeatureName())
@@ -634,7 +634,7 @@ func (cs *chargingStation) notSupportedError(requestId string, action string) {
 	}
 }
 
-func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
+func (cs *chargingStation) handleIncomingRequest(ctx context.Context, request ocpp.Request, requestId string, action string) {
 	profile, found := cs.client.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
 	if !found {
@@ -718,88 +718,88 @@ func (cs *chargingStation) handleIncomingRequest(request ocpp.Request, requestId
 	var err error
 	switch action {
 	case reservation.CancelReservationFeatureName:
-		response, err = cs.reservationHandler.OnCancelReservation(nil, request.(*reservation.CancelReservationRequest))
+		response, err = cs.reservationHandler.OnCancelReservation(ctx, request.(*reservation.CancelReservationRequest))
 	case security.CertificateSignedFeatureName:
-		response, err = cs.securityHandler.OnCertificateSigned(nil, request.(*security.CertificateSignedRequest))
+		response, err = cs.securityHandler.OnCertificateSigned(ctx, request.(*security.CertificateSignedRequest))
 	case availability.ChangeAvailabilityFeatureName:
-		response, err = cs.availabilityHandler.OnChangeAvailability(nil, request.(*availability.ChangeAvailabilityRequest))
+		response, err = cs.availabilityHandler.OnChangeAvailability(ctx, request.(*availability.ChangeAvailabilityRequest))
 	case authorization.ClearCacheFeatureName:
-		response, err = cs.authorizationHandler.OnClearCache(nil, request.(*authorization.ClearCacheRequest))
+		response, err = cs.authorizationHandler.OnClearCache(ctx, request.(*authorization.ClearCacheRequest))
 	case smartcharging.ClearChargingProfileFeatureName:
-		response, err = cs.smartChargingHandler.OnClearChargingProfile(nil, request.(*smartcharging.ClearChargingProfileRequest))
+		response, err = cs.smartChargingHandler.OnClearChargingProfile(ctx, request.(*smartcharging.ClearChargingProfileRequest))
 	case display.ClearDisplayMessageFeatureName:
-		response, err = cs.displayHandler.OnClearDisplay(nil, request.(*display.ClearDisplayRequest))
+		response, err = cs.displayHandler.OnClearDisplay(ctx, request.(*display.ClearDisplayRequest))
 	case diagnostics.ClearVariableMonitoringFeatureName:
-		response, err = cs.diagnosticsHandler.OnClearVariableMonitoring(nil, request.(*diagnostics.ClearVariableMonitoringRequest))
+		response, err = cs.diagnosticsHandler.OnClearVariableMonitoring(ctx, request.(*diagnostics.ClearVariableMonitoringRequest))
 	case tariffcost.CostUpdatedFeatureName:
-		response, err = cs.tariffCostHandler.OnCostUpdated(nil, request.(*tariffcost.CostUpdatedRequest))
+		response, err = cs.tariffCostHandler.OnCostUpdated(ctx, request.(*tariffcost.CostUpdatedRequest))
 	case diagnostics.CustomerInformationFeatureName:
-		response, err = cs.diagnosticsHandler.OnCustomerInformation(nil, request.(*diagnostics.CustomerInformationRequest))
+		response, err = cs.diagnosticsHandler.OnCustomerInformation(ctx, request.(*diagnostics.CustomerInformationRequest))
 	case data.DataTransferFeatureName:
-		response, err = cs.dataHandler.OnDataTransfer(nil, request.(*data.DataTransferRequest))
+		response, err = cs.dataHandler.OnDataTransfer(ctx, request.(*data.DataTransferRequest))
 	case iso15118.DeleteCertificateFeatureName:
-		response, err = cs.iso15118Handler.OnDeleteCertificate(nil, request.(*iso15118.DeleteCertificateRequest))
+		response, err = cs.iso15118Handler.OnDeleteCertificate(ctx, request.(*iso15118.DeleteCertificateRequest))
 	case provisioning.GetBaseReportFeatureName:
-		response, err = cs.provisioningHandler.OnGetBaseReport(nil, request.(*provisioning.GetBaseReportRequest))
+		response, err = cs.provisioningHandler.OnGetBaseReport(ctx, request.(*provisioning.GetBaseReportRequest))
 	case smartcharging.GetChargingProfilesFeatureName:
-		response, err = cs.smartChargingHandler.OnGetChargingProfiles(nil, request.(*smartcharging.GetChargingProfilesRequest))
+		response, err = cs.smartChargingHandler.OnGetChargingProfiles(ctx, request.(*smartcharging.GetChargingProfilesRequest))
 	case smartcharging.GetCompositeScheduleFeatureName:
-		response, err = cs.smartChargingHandler.OnGetCompositeSchedule(nil, request.(*smartcharging.GetCompositeScheduleRequest))
+		response, err = cs.smartChargingHandler.OnGetCompositeSchedule(ctx, request.(*smartcharging.GetCompositeScheduleRequest))
 	case display.GetDisplayMessagesFeatureName:
-		response, err = cs.displayHandler.OnGetDisplayMessages(nil, request.(*display.GetDisplayMessagesRequest))
+		response, err = cs.displayHandler.OnGetDisplayMessages(ctx, request.(*display.GetDisplayMessagesRequest))
 	case iso15118.GetInstalledCertificateIdsFeatureName:
-		response, err = cs.iso15118Handler.OnGetInstalledCertificateIds(nil, request.(*iso15118.GetInstalledCertificateIdsRequest))
+		response, err = cs.iso15118Handler.OnGetInstalledCertificateIds(ctx, request.(*iso15118.GetInstalledCertificateIdsRequest))
 	case localauth.GetLocalListVersionFeatureName:
-		response, err = cs.localAuthListHandler.OnGetLocalListVersion(nil, request.(*localauth.GetLocalListVersionRequest))
+		response, err = cs.localAuthListHandler.OnGetLocalListVersion(ctx, request.(*localauth.GetLocalListVersionRequest))
 	case diagnostics.GetLogFeatureName:
-		response, err = cs.diagnosticsHandler.OnGetLog(nil, request.(*diagnostics.GetLogRequest))
+		response, err = cs.diagnosticsHandler.OnGetLog(ctx, request.(*diagnostics.GetLogRequest))
 	case diagnostics.GetMonitoringReportFeatureName:
-		response, err = cs.diagnosticsHandler.OnGetMonitoringReport(nil, request.(*diagnostics.GetMonitoringReportRequest))
+		response, err = cs.diagnosticsHandler.OnGetMonitoringReport(ctx, request.(*diagnostics.GetMonitoringReportRequest))
 	case provisioning.GetReportFeatureName:
-		response, err = cs.provisioningHandler.OnGetReport(nil, request.(*provisioning.GetReportRequest))
+		response, err = cs.provisioningHandler.OnGetReport(ctx, request.(*provisioning.GetReportRequest))
 	case transactions.GetTransactionStatusFeatureName:
-		response, err = cs.transactionsHandler.OnGetTransactionStatus(nil, request.(*transactions.GetTransactionStatusRequest))
+		response, err = cs.transactionsHandler.OnGetTransactionStatus(ctx, request.(*transactions.GetTransactionStatusRequest))
 	case provisioning.GetVariablesFeatureName:
-		response, err = cs.provisioningHandler.OnGetVariables(nil, request.(*provisioning.GetVariablesRequest))
+		response, err = cs.provisioningHandler.OnGetVariables(ctx, request.(*provisioning.GetVariablesRequest))
 	case iso15118.InstallCertificateFeatureName:
-		response, err = cs.iso15118Handler.OnInstallCertificate(nil, request.(*iso15118.InstallCertificateRequest))
+		response, err = cs.iso15118Handler.OnInstallCertificate(ctx, request.(*iso15118.InstallCertificateRequest))
 	case firmware.PublishFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnPublishFirmware(nil, request.(*firmware.PublishFirmwareRequest))
+		response, err = cs.firmwareHandler.OnPublishFirmware(ctx, request.(*firmware.PublishFirmwareRequest))
 	case remotecontrol.RequestStartTransactionFeatureName:
-		response, err = cs.remoteControlHandler.OnRequestStartTransaction(nil, request.(*remotecontrol.RequestStartTransactionRequest))
+		response, err = cs.remoteControlHandler.OnRequestStartTransaction(ctx, request.(*remotecontrol.RequestStartTransactionRequest))
 	case remotecontrol.RequestStopTransactionFeatureName:
-		response, err = cs.remoteControlHandler.OnRequestStopTransaction(nil, request.(*remotecontrol.RequestStopTransactionRequest))
+		response, err = cs.remoteControlHandler.OnRequestStopTransaction(ctx, request.(*remotecontrol.RequestStopTransactionRequest))
 	case reservation.ReserveNowFeatureName:
-		response, err = cs.reservationHandler.OnReserveNow(nil, request.(*reservation.ReserveNowRequest))
+		response, err = cs.reservationHandler.OnReserveNow(ctx, request.(*reservation.ReserveNowRequest))
 	case provisioning.ResetFeatureName:
-		response, err = cs.provisioningHandler.OnReset(nil, request.(*provisioning.ResetRequest))
+		response, err = cs.provisioningHandler.OnReset(ctx, request.(*provisioning.ResetRequest))
 	case localauth.SendLocalListFeatureName:
-		response, err = cs.localAuthListHandler.OnSendLocalList(nil, request.(*localauth.SendLocalListRequest))
+		response, err = cs.localAuthListHandler.OnSendLocalList(ctx, request.(*localauth.SendLocalListRequest))
 	case smartcharging.SetChargingProfileFeatureName:
-		response, err = cs.smartChargingHandler.OnSetChargingProfile(nil, request.(*smartcharging.SetChargingProfileRequest))
+		response, err = cs.smartChargingHandler.OnSetChargingProfile(ctx, request.(*smartcharging.SetChargingProfileRequest))
 	case display.SetDisplayMessageFeatureName:
-		response, err = cs.displayHandler.OnSetDisplayMessage(nil, request.(*display.SetDisplayMessageRequest))
+		response, err = cs.displayHandler.OnSetDisplayMessage(ctx, request.(*display.SetDisplayMessageRequest))
 	case diagnostics.SetMonitoringBaseFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetMonitoringBase(nil, request.(*diagnostics.SetMonitoringBaseRequest))
+		response, err = cs.diagnosticsHandler.OnSetMonitoringBase(ctx, request.(*diagnostics.SetMonitoringBaseRequest))
 	case diagnostics.SetMonitoringLevelFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetMonitoringLevel(nil, request.(*diagnostics.SetMonitoringLevelRequest))
+		response, err = cs.diagnosticsHandler.OnSetMonitoringLevel(ctx, request.(*diagnostics.SetMonitoringLevelRequest))
 	case provisioning.SetNetworkProfileFeatureName:
-		response, err = cs.provisioningHandler.OnSetNetworkProfile(nil, request.(*provisioning.SetNetworkProfileRequest))
+		response, err = cs.provisioningHandler.OnSetNetworkProfile(ctx, request.(*provisioning.SetNetworkProfileRequest))
 	case diagnostics.SetVariableMonitoringFeatureName:
-		response, err = cs.diagnosticsHandler.OnSetVariableMonitoring(nil, request.(*diagnostics.SetVariableMonitoringRequest))
+		response, err = cs.diagnosticsHandler.OnSetVariableMonitoring(ctx, request.(*diagnostics.SetVariableMonitoringRequest))
 	case provisioning.SetVariablesFeatureName:
-		response, err = cs.provisioningHandler.OnSetVariables(nil, request.(*provisioning.SetVariablesRequest))
+		response, err = cs.provisioningHandler.OnSetVariables(ctx, request.(*provisioning.SetVariablesRequest))
 	case remotecontrol.TriggerMessageFeatureName:
-		response, err = cs.remoteControlHandler.OnTriggerMessage(nil, request.(*remotecontrol.TriggerMessageRequest))
+		response, err = cs.remoteControlHandler.OnTriggerMessage(ctx, request.(*remotecontrol.TriggerMessageRequest))
 	case remotecontrol.UnlockConnectorFeatureName:
-		response, err = cs.remoteControlHandler.OnUnlockConnector(nil, request.(*remotecontrol.UnlockConnectorRequest))
+		response, err = cs.remoteControlHandler.OnUnlockConnector(ctx, request.(*remotecontrol.UnlockConnectorRequest))
 	case firmware.UnpublishFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnUnpublishFirmware(nil, request.(*firmware.UnpublishFirmwareRequest))
+		response, err = cs.firmwareHandler.OnUnpublishFirmware(ctx, request.(*firmware.UnpublishFirmwareRequest))
 	case firmware.UpdateFirmwareFeatureName:
-		response, err = cs.firmwareHandler.OnUpdateFirmware(nil, request.(*firmware.UpdateFirmwareRequest))
+		response, err = cs.firmwareHandler.OnUpdateFirmware(ctx, request.(*firmware.UpdateFirmwareRequest))
 	default:
 		cs.notSupportedError(requestId, action)
 		return
 	}
-	cs.sendResponse(response, err, requestId)
+	cs.sendResponse(ctx, response, err, requestId)
 }

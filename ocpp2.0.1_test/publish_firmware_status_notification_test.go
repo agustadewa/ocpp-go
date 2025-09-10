@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -73,7 +74,7 @@ func (suite *OcppV2TestSuite) TestPublishFirmwareStatusNotificationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.PublishFirmwareStatusNotification(nil, status, func(request *firmware.PublishFirmwareStatusNotificationRequest) {
+	response, err := suite.chargingStation.PublishFirmwareStatusNotification(context.Background(), status, func(request *firmware.PublishFirmwareStatusNotificationRequest) {
 		request.Location = location
 		request.RequestID = requestID
 	})

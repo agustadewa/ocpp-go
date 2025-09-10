@@ -14,9 +14,9 @@ import (
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 ISO 15118 profile.
 type CSMSHandler interface {
 	// OnGet15118EVCertificate is called on the CSMS whenever a Get15118EVCertificateRequest is received from a charging station.
-	OnGet15118EVCertificate(chargingStationID string, request *Get15118EVCertificateRequest) (response *Get15118EVCertificateResponse, err error)
+	OnGet15118EVCertificate(ctx context.Context, chargingStationID string, request *Get15118EVCertificateRequest) (response *Get15118EVCertificateResponse, err error)
 	// OnGetCertificateStatus is called on the CSMS whenever a GetCertificateStatusRequest is received from a charging station.
-	OnGetCertificateStatus(chargingStationID string, request *GetCertificateStatusRequest) (response *GetCertificateStatusResponse, err error)
+	OnGetCertificateStatus(ctx context.Context, chargingStationID string, request *GetCertificateStatusRequest) (response *GetCertificateStatusResponse, err error)
 }
 
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 ISO 15118 profile.

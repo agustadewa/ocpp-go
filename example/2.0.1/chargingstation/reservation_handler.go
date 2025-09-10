@@ -16,7 +16,7 @@ func (handler *ChargingStationHandler) OnCancelReservation(ctx context.Context, 
 			e.currentReservation = -1
 			for j := range e.connectors {
 				if e.connectors[j].status == availability.ConnectorStatusReserved {
-					go updateConnectorStatus(handler, i, j, availability.ConnectorStatusAvailable)
+					go updateConnectorStatus(ctx, handler, i, j, availability.ConnectorStatusAvailable)
 					break
 				}
 			}
@@ -50,7 +50,7 @@ func (handler *ChargingStationHandler) OnReserveNow(ctx context.Context, request
 	evse.currentReservation = request.ID
 	logDefault(request.GetFeatureName()).Infof("reservation %v accepted for evse %v, connector %v",
 		request.ID, reservedEvse, reservedConnector)
-	go updateConnectorStatus(handler, reservedEvse, reservedConnector, availability.ConnectorStatusReserved)
+	go updateConnectorStatus(ctx, handler, reservedEvse, reservedConnector, availability.ConnectorStatusReserved)
 
 	// TODO: the logic above is incomplete. Advanced support for reservation management is missing.
 	// TODO: automatically remove reservation after expiryDate

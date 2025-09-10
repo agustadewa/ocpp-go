@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -81,7 +82,7 @@ func (suite *OcppV16TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.DataTransfer(vendorId, func(request *core.DataTransferRequest) {
+	confirmation, err := suite.chargePoint.DataTransfer(context.Background(), vendorId, func(request *core.DataTransferRequest) {
 		request.Data = data
 	})
 	require.Nil(t, err)
@@ -122,7 +123,7 @@ func (suite *OcppV16TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.DataTransfer(wsId, func(confirmation *core.DataTransferConfirmation, err error) {
+	err = suite.centralSystem.DataTransfer(context.Background(), wsId, func(confirmation *core.DataTransferConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

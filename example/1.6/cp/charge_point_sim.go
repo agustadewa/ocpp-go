@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -76,32 +77,32 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 	dummyClientIdTag := "12345"
 	chargingConnector := 1
 	// Boot
-	bootConf, err := chargePoint.BootNotification("model1", "vendor1")
+	bootConf, err := chargePoint.BootNotification(context.Background(), "model1", "vendor1")
 	checkError(err)
 	logDefault(bootConf.GetFeatureName()).Infof("status: %v, interval: %v, current time: %v", bootConf.Status, bootConf.Interval, bootConf.CurrentTime.String())
 	// Notify connector status
 	updateStatus(stateHandler, 0, core.ChargePointStatusAvailable)
 	// Security event
-	_, err = chargePoint.SecurityEventNotification("Event", types.Now())
+	_, err = chargePoint.SecurityEventNotification(context.Background(), "Event", types.Now())
 	checkError(err)
 	// Send log notification
-	_, err = chargePoint.LogStatusNotification(logging.UploadLogStatusUploading, 1)
+	_, err = chargePoint.LogStatusNotification(context.Background(), logging.UploadLogStatusUploading, 1)
 	checkError(err)
 	// Request cert signing
-	certificate, err := chargePoint.SignCertificate("adsad")
+	certificate, err := chargePoint.SignCertificate(context.Background(), "adsad")
 	checkError(err)
 	logDefault(certificate.GetFeatureName()).Infof("status: %v", certificate.Status)
 
 	// Wait for some time ...
 	time.Sleep(5 * time.Second)
 	// Simulate charging for connector 1
-	authConf, err := chargePoint.Authorize(dummyClientIdTag)
+	authConf, err := chargePoint.Authorize(context.Background(), dummyClientIdTag)
 	checkError(err)
 	logDefault(authConf.GetFeatureName()).Infof("status: %v %v", authConf.IdTagInfo.Status, getExpiryDate(authConf.IdTagInfo))
 	// Update connector status
 	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusPreparing)
 	// Start transaction
-	startConf, err := chargePoint.StartTransaction(chargingConnector, dummyClientIdTag, stateHandler.meterValue, types.NewDateTime(time.Now()))
+	startConf, err := chargePoint.StartTransaction(context.Background(), chargingConnector, dummyClientIdTag, stateHandler.meterValue, types.NewDateTime(time.Now()))
 	checkError(err)
 	logDefault(startConf.GetFeatureName()).Infof("status: %v, transaction %v %v", startConf.IdTagInfo.Status, startConf.TransactionId, getExpiryDate(startConf.IdTagInfo))
 	stateHandler.connectors[chargingConnector].currentTransaction = startConf.TransactionId
@@ -117,14 +118,14 @@ func exampleRoutine(chargePoint ocpp16.ChargePoint, stateHandler *ChargePointHan
 		stateHandler.meterValue += 10
 		sampledValue := types.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit: types.UnitOfMeasureWh, Format: types.ValueFormatRaw, Measurand: types.MeasurandEnergyActiveExportRegister, Context: types.ReadingContextSamplePeriodic, Location: types.LocationOutlet}
 		meterValue := types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{sampledValue}}
-		meterConf, err := chargePoint.MeterValues(chargingConnector, []types.MeterValue{meterValue})
+		meterConf, err := chargePoint.MeterValues(context.Background(), chargingConnector, []types.MeterValue{meterValue})
 		checkError(err)
 		logDefault(meterConf.GetFeatureName()).Infof("sent updated %v", sampledValue.Measurand)
 	}
 	stateHandler.meterValue += 2
 	// Stop charging for connector 1
 	updateStatus(stateHandler, chargingConnector, core.ChargePointStatusFinishing)
-	stopConf, err := chargePoint.StopTransaction(stateHandler.meterValue, types.NewDateTime(time.Now()), startConf.TransactionId, func(request *core.StopTransactionRequest) {
+	stopConf, err := chargePoint.StopTransaction(context.Background(), stateHandler.meterValue, types.NewDateTime(time.Now()), startConf.TransactionId, func(request *core.StopTransactionRequest) {
 		sampledValue := types.SampledValue{Value: fmt.Sprintf("%v", stateHandler.meterValue), Unit: types.UnitOfMeasureWh, Format: types.ValueFormatRaw, Measurand: types.MeasurandEnergyActiveExportRegister, Context: types.ReadingContextSamplePeriodic, Location: types.LocationOutlet}
 		meterValue := types.MeterValue{Timestamp: types.NewDateTime(time.Now()), SampledValue: []types.SampledValue{sampledValue}}
 		request.TransactionData = []types.MeterValue{meterValue}

@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
@@ -54,7 +55,7 @@ func (suite *OcppV16TestSuite) TestInstallCertificateE2EMocked() {
 
 	// Setting handlers
 	handler := mocks.NewMockCertificatesChargePointHandler(t)
-	handler.EXPECT().OnInstallCertificate(mock.Anything).RunAndReturn(func(request *certificates.InstallCertificateRequest) (*certificates.InstallCertificateResponse, error) {
+	handler.EXPECT().OnInstallCertificate(context.Background(), mock.Anything).RunAndReturn(func(ctx context.Context, request *certificates.InstallCertificateRequest) (*certificates.InstallCertificateResponse, error) {
 		assert.Equal(t, certificateType, request.CertificateType)
 		assert.Equal(t, certificate, request.Certificate)
 		return installCertificateResponse, nil
@@ -70,7 +71,7 @@ func (suite *OcppV16TestSuite) TestInstallCertificateE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.InstallCertificate(wsId, func(response *certificates.InstallCertificateResponse, err error) {
+	err = suite.centralSystem.InstallCertificate(context.Background(), wsId, func(response *certificates.InstallCertificateResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, status, response.Status)

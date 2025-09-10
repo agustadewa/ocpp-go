@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -59,7 +60,7 @@ func (suite *OcppV2TestSuite) TestGetTransactionStatusE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetTransactionStatus(wsId, func(response *transactions.GetTransactionStatusResponse, err error) {
+	err = suite.csms.GetTransactionStatus(context.Background(), wsId, func(response *transactions.GetTransactionStatusResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, messagesInQueue, response.MessagesInQueue)

@@ -11,19 +11,26 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/firmware"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"go.opentelemetry.io/otel"
 )
 
 func (handler *ChargingStationHandler) OnPublishFirmware(ctx context.Context, request *firmware.PublishFirmwareRequest) (response *firmware.PublishFirmwareResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnPublishFirmware.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnUnpublishFirmware(ctx context.Context, request *firmware.UnpublishFirmwareRequest) (response *firmware.UnpublishFirmwareResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnUnpublishFirmware.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnUpdateFirmware(ctx context.Context, request *firmware.UpdateFirmwareRequest) (response *firmware.UpdateFirmwareResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnUpdateFirmware.handler")
+	defer span.End()
 	retries := 0
 	retryInterval := 30
 	if request.Retries != nil {
@@ -33,31 +40,36 @@ func (handler *ChargingStationHandler) OnUpdateFirmware(ctx context.Context, req
 		retryInterval = *request.RetryInterval
 	}
 	logDefault(request.GetFeatureName()).Infof("starting update firmware procedure")
-	go updateFirmware(request.Firmware.Location, request.Firmware.RetrieveDateTime, request.Firmware.InstallDateTime, retries, retryInterval)
+	go updateFirmware(ctx, request.Firmware.Location, request.Firmware.RetrieveDateTime, request.Firmware.InstallDateTime, retries, retryInterval)
 	return firmware.NewUpdateFirmwareResponse(firmware.UpdateFirmwareStatusAccepted), nil
 }
 
-func updateFirmwareStatus(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) {
+func updateFirmwareStatus(ctx context.Context, status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "updateFirmwareStatus")
+	defer span.End()
 	statusConfirmation, err := chargingStation.FirmwareStatusNotification(context.Background(), status, props...)
 	checkError(err)
 	logDefault(statusConfirmation.GetFeatureName()).Infof("firmware status updated to %v", status)
 }
 
 // Retrieve data and install date are ignored for this test function.
-func updateFirmware(location string, retrieveDate *types.DateTime, installDate *types.DateTime, retries int, retryInterval int) {
-	updateFirmwareStatus(firmware.FirmwareStatusDownloading)
+func updateFirmware(ctx context.Context, location string, retrieveDate *types.DateTime, installDate *types.DateTime, retries int, retryInterval int) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "updateFirmware")
+	defer span.End()
+
+	updateFirmwareStatus(ctx, firmware.FirmwareStatusDownloading)
 	err := downloadFile("/tmp/out.bin", location)
 	if err != nil {
 		logDefault(firmware.UpdateFirmwareFeatureName).Errorf("error while downloading file %v", err)
-		updateFirmwareStatus(firmware.FirmwareStatusDownloadFailed)
+		updateFirmwareStatus(ctx, firmware.FirmwareStatusDownloadFailed)
 		return
 	}
-	updateFirmwareStatus(firmware.FirmwareStatusDownloaded)
+	updateFirmwareStatus(ctx, firmware.FirmwareStatusDownloaded)
 	// Simulate installation
-	updateFirmwareStatus(firmware.FirmwareStatusInstalling)
+	updateFirmwareStatus(ctx, firmware.FirmwareStatusInstalling)
 	time.Sleep(time.Second * 5)
 	// Notify completion
-	updateFirmwareStatus(firmware.FirmwareStatusInstalled)
+	updateFirmwareStatus(ctx, firmware.FirmwareStatusInstalled)
 }
 
 func downloadFile(filepath string, url string) error {

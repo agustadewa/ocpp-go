@@ -6,35 +6,48 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"go.opentelemetry.io/otel"
 )
 
 func (handler *ChargingStationHandler) OnGetBaseReport(ctx context.Context, request *provisioning.GetBaseReportRequest) (response *provisioning.GetBaseReportResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnGetBaseReport.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnGetReport(ctx context.Context, request *provisioning.GetReportRequest) (response *provisioning.GetReportResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnGetReport.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnGetVariables(ctx context.Context, request *provisioning.GetVariablesRequest) (response *provisioning.GetVariablesResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnGetVariables.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnReset(ctx context.Context, request *provisioning.ResetRequest) (response *provisioning.ResetResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnReset.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Info("reset handled")
 	response = provisioning.NewResetResponse(provisioning.ResetStatusAccepted)
 	return
 }
 
 func (handler *ChargingStationHandler) OnSetNetworkProfile(ctx context.Context, request *provisioning.SetNetworkProfileRequest) (response *provisioning.SetNetworkProfileResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnSetNetworkProfile.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
 func (handler *ChargingStationHandler) OnSetVariables(ctx context.Context, request *provisioning.SetVariablesRequest) (response *provisioning.SetVariablesResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnSetVariables.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }

@@ -7,9 +7,12 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"go.opentelemetry.io/otel"
 )
 
 func (handler *ChargingStationHandler) OnCancelReservation(ctx context.Context, request *reservation.CancelReservationRequest) (resp *reservation.CancelReservationResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnCancelReservation.handler")
+	defer span.End()
 	for i, e := range handler.evse {
 		if e.currentReservation == request.ReservationID {
 			// Found reservation -> cancel
@@ -32,11 +35,13 @@ func (handler *ChargingStationHandler) OnCancelReservation(ctx context.Context, 
 }
 
 func (handler *ChargingStationHandler) OnReserveNow(ctx context.Context, request *reservation.ReserveNowRequest) (resp *reservation.ReserveNowResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnClearVariableMonitoring.handler")
+	defer span.End()
 	var reservedEvse int
 	var reservedConnector int
 	var status reservation.ReserveNowStatus
 
-	status, reservedEvse, reservedConnector, err = handler.findConnector(request.EvseID, request.ConnectorType)
+	status, reservedEvse, reservedConnector, err = handler.findConnector(ctx, request.EvseID, request.ConnectorType)
 	if err != nil {
 		logDefault(request.GetFeatureName()).Error(err)
 	}
@@ -57,7 +62,9 @@ func (handler *ChargingStationHandler) OnReserveNow(ctx context.Context, request
 	return
 }
 
-func (handler *ChargingStationHandler) findConnector(requestedEVSE *int, connectorType reservation.ConnectorType) (status reservation.ReserveNowStatus, evseID int, connectorID int, err error) {
+func (handler *ChargingStationHandler) findConnector(ctx context.Context, requestedEVSE *int, connectorType reservation.ConnectorType) (status reservation.ReserveNowStatus, evseID int, connectorID int, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "findConnector")
+	defer span.End()
 	status = reservation.ReserveNowStatusAccepted
 	if requestedEVSE != nil {
 		evseID = *requestedEVSE

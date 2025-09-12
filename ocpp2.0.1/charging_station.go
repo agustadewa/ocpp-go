@@ -26,6 +26,9 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type chargingStation struct {
@@ -620,25 +623,40 @@ func (cs *chargingStation) IsConnected() bool {
 	return cs.client.IsConnected()
 }
 
-func (cs *chargingStation) notImplementedError(requestId string, action string) {
-	err := cs.client.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+func (cs *chargingStation) notImplementedError(ctx context.Context, requestId string, action string) {
+	err := cs.client.SendErrorWithContext(ctx, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
 		cs.error(fmt.Errorf("replying csms to request %v with error: %w", requestId, err))
 	}
 }
 
-func (cs *chargingStation) notSupportedError(requestId string, action string) {
-	err := cs.client.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charging station", action), nil)
+func (cs *chargingStation) notSupportedError(ctx context.Context, requestId string, action string) {
+	err := cs.client.SendErrorWithContext(ctx, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charging station", action), nil)
 	if err != nil {
 		cs.error(fmt.Errorf("replying csms to request %s with 'not supported': %w", requestId, err))
 	}
 }
 
 func (cs *chargingStation) handleIncomingRequest(ctx context.Context, request ocpp.Request, requestId string, action string) {
+	// Create tracing span for incoming request handling
+	tracer := otel.Tracer("ocpp-charging-station")
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("cs.in_call.%s", action))
+	defer span.End()
+
+	// Add span attributes
+	span.SetAttributes(
+		attribute.String("ocpp.feature_name", action),
+		attribute.String("ocpp.unique_id", requestId),
+		attribute.String("ocpp.msg_type", "call"),
+		attribute.String("ocpp.role", "charging_station"),
+	)
+
 	profile, found := cs.client.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
 	if !found {
-		cs.notImplementedError(requestId, action)
+		span.SetStatus(codes.Error, "Feature not found")
+		span.RecordError(fmt.Errorf("feature %s not found", action))
+		cs.notImplementedError(ctx, requestId, action)
 		return
 	} else {
 		supported := true
@@ -709,7 +727,9 @@ func (cs *chargingStation) handleIncomingRequest(ctx context.Context, request oc
 			}
 		}
 		if !supported {
-			cs.notSupportedError(requestId, action)
+			span.SetStatus(codes.Error, "Handler not supported")
+			span.RecordError(fmt.Errorf("handler for profile %s not supported", profile.Name))
+			cs.notSupportedError(ctx, requestId, action)
 			return
 		}
 	}
@@ -798,8 +818,19 @@ func (cs *chargingStation) handleIncomingRequest(ctx context.Context, request oc
 	case firmware.UpdateFirmwareFeatureName:
 		response, err = cs.firmwareHandler.OnUpdateFirmware(ctx, request.(*firmware.UpdateFirmwareRequest))
 	default:
-		cs.notSupportedError(requestId, action)
+		span.SetStatus(codes.Error, "Action not supported")
+		span.RecordError(fmt.Errorf("action %s not supported", action))
+		cs.notSupportedError(ctx, requestId, action)
 		return
 	}
+
+	// Record error on span if handler returned an error
+	if err != nil {
+		span.SetStatus(codes.Error, "Handler error")
+		span.RecordError(err)
+	} else {
+		span.SetStatus(codes.Ok, "Request handled successfully")
+	}
+
 	cs.sendResponse(ctx, response, err, requestId)
 }

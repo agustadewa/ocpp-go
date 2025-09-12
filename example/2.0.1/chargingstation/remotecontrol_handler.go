@@ -10,9 +10,12 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/provisioning"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"go.opentelemetry.io/otel"
 )
 
 func (handler *ChargingStationHandler) OnRequestStartTransaction(ctx context.Context, request *remotecontrol.RequestStartTransactionRequest) (response *remotecontrol.RequestStartTransactionResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnRequestStartTransaction.handler")
+	defer span.End()
 	if request.EvseID != nil {
 		evse, ok := handler.evse[*request.EvseID]
 		if !ok || evse.availability != availability.OperationalStatusOperative {
@@ -37,6 +40,8 @@ func (handler *ChargingStationHandler) OnRequestStartTransaction(ctx context.Con
 }
 
 func (handler *ChargingStationHandler) OnRequestStopTransaction(ctx context.Context, request *remotecontrol.RequestStopTransactionRequest) (response *remotecontrol.RequestStopTransactionResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnRequestStopTransaction.handler")
+	defer span.End()
 	for key, evse := range handler.evse {
 		if evse.currentTransaction == request.TransactionID {
 			logDefault(request.GetFeatureName()).Infof("stopped transaction %v on evse %v", evse.currentTransaction, key)
@@ -59,6 +64,8 @@ func (handler *ChargingStationHandler) OnRequestStopTransaction(ctx context.Cont
 }
 
 func (handler *ChargingStationHandler) OnTriggerMessage(ctx context.Context, request *remotecontrol.TriggerMessageRequest) (response *remotecontrol.TriggerMessageResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnTriggerMessage.handler")
+	defer span.End()
 	logDefault(request.GetFeatureName()).Infof("received trigger for %v", request.RequestedMessage)
 	status := remotecontrol.TriggerMessageStatusRejected
 	switch request.RequestedMessage {
@@ -134,6 +141,8 @@ func (handler *ChargingStationHandler) OnTriggerMessage(ctx context.Context, req
 }
 
 func (handler *ChargingStationHandler) OnUnlockConnector(ctx context.Context, request *remotecontrol.UnlockConnectorRequest) (response *remotecontrol.UnlockConnectorResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnUnlockConnector.handler")
+	defer span.End()
 	evse, ok := handler.evse[request.EvseID]
 	if !ok || !evse.hasConnector(request.ConnectorID) {
 		logDefault(request.GetFeatureName()).Errorf("couldn't unlock unknown connector %d for EVSE %d", request.ConnectorID, request.EvseID)

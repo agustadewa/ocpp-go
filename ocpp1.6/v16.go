@@ -198,10 +198,10 @@ func NewChargePoint(id string, endpoint *ocppj.Client, client ws.Client) ChargeP
 	// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
 	endpoint.SetOnRequestCanceled(cp.onRequestTimeout)
 
-	cp.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
+	cp.client.SetResponseHandler(func(ctx context.Context, confirmation ocpp.Response, requestId string) {
 		cp.confirmationHandler <- confirmation
 	})
-	cp.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+	cp.client.SetErrorHandler(func(ctx context.Context, err *ocpp.Error, details interface{}) {
 		cp.errorHandler <- err
 	})
 	cp.client.SetRequestHandler(cp.handleIncomingRequest)

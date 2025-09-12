@@ -567,13 +567,13 @@ func (cs *centralSystem) sendResponse(ctx context.Context, chargePointId string,
 	if confirmation == nil || reflect.ValueOf(confirmation).IsNil() {
 		err = fmt.Errorf("empty confirmation to %s for request %s", chargePointId, requestId)
 		// Sending a dummy error to server instead, then notify client implementation
-		_ = cs.server.SendError(chargePointId, requestId, ocppj.GenericError, err.Error(), nil)
+		_ = cs.server.SendErrorWithContext(ctx, chargePointId, requestId, ocppj.GenericError, err.Error(), nil)
 		cs.error(err)
 		return
 	}
 
 	// send confirmation response
-	err = cs.server.SendResponse(chargePointId, requestId, confirmation)
+	err = cs.server.SendResponseWithContext(ctx, chargePointId, requestId, confirmation)
 	if err != nil {
 		// Error while sending an error. Will attempt to send a default error instead
 		cs.server.HandleFailedResponseError(ctx, chargePointId, requestId, err, confirmation.GetFeatureName())

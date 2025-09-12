@@ -26,6 +26,10 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type csms struct {
@@ -828,9 +832,9 @@ func (cs *csms) sendResponse(ctx context.Context, chargingStationID string, resp
 	if err != nil {
 		// Send error response
 		if ocppError, ok := err.(*ocpp.Error); ok {
-			err = cs.server.SendError(chargingStationID, requestId, ocppError.Code, ocppError.Description, nil)
+			err = cs.server.SendErrorWithContext(ctx, chargingStationID, requestId, ocppError.Code, ocppError.Description, nil)
 		} else {
-			err = cs.server.SendError(chargingStationID, requestId, ocppj.InternalError, err.Error(), nil)
+			err = cs.server.SendErrorWithContext(ctx, chargingStationID, requestId, ocppj.InternalError, err.Error(), nil)
 		}
 		if err != nil {
 			// Error while sending an error. Will attempt to send a default error instead
@@ -845,13 +849,13 @@ func (cs *csms) sendResponse(ctx context.Context, chargingStationID string, resp
 	if response == nil || reflect.ValueOf(response).IsNil() {
 		err = fmt.Errorf("empty response to %s for request %s", chargingStationID, requestId)
 		// Sending a dummy error to server instead, then notify client implementation
-		_ = cs.server.SendError(chargingStationID, requestId, ocppj.GenericError, err.Error(), nil)
+		_ = cs.server.SendErrorWithContext(ctx, chargingStationID, requestId, ocppj.GenericError, err.Error(), nil)
 		cs.error(err)
 		return
 	}
 
 	// send confirmation response
-	err = cs.server.SendResponse(chargingStationID, requestId, response)
+	err = cs.server.SendResponseWithContext(ctx, chargingStationID, requestId, response)
 	if err != nil {
 		// Error while sending an error. Will attempt to send a default error instead
 		cs.server.HandleFailedResponseError(ctx, chargingStationID, requestId, err, response.GetFeatureName())
@@ -878,9 +882,25 @@ func (cs *csms) notSupportedError(ctx context.Context, chargingStationID string,
 }
 
 func (cs *csms) handleIncomingRequest(ctx context.Context, chargingStation ChargingStationConnection, request ocpp.Request, requestId string, action string) {
+	// Create tracing span for incoming request handling
+	tracer := otel.Tracer("ocpp-csms")
+	ctx, span := tracer.Start(ctx, "csms.handle_request")
+	defer span.End()
+
+	// Add span attributes
+	span.SetAttributes(
+		attribute.String("ocpp.action", action),
+		attribute.String("ocpp.request_id", requestId),
+		attribute.String("ocpp.direction", "incoming"),
+		attribute.String("ocpp.role", "csms"),
+		attribute.String("ocpp.charging_station_id", chargingStation.ID()),
+	)
+
 	profile, found := cs.server.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
 	if !found {
+		span.SetStatus(codes.Error, "Feature not found")
+		span.RecordError(fmt.Errorf("feature %s not found", action))
 		cs.notImplementedError(ctx, chargingStation.ID(), requestId, action)
 		return
 	} else {
@@ -952,6 +972,8 @@ func (cs *csms) handleIncomingRequest(ctx context.Context, chargingStation Charg
 			}
 		}
 		if !supported {
+			span.SetStatus(codes.Error, "Handler not supported")
+			span.RecordError(fmt.Errorf("handler for profile %s not supported", profile.Name))
 			cs.notSupportedError(ctx, chargingStation.ID(), requestId, action)
 			return
 		}
@@ -959,7 +981,18 @@ func (cs *csms) handleIncomingRequest(ctx context.Context, chargingStation Charg
 	var response ocpp.Response
 	var err error
 	// Execute in separate goroutine, so the caller goroutine is available
-	go func() {
+	// Pass the traced context to the goroutine
+	go func(ctx context.Context, span trace.Span) {
+		defer func() {
+			// Record error on span if handler returned an error
+			if err != nil {
+				span.SetStatus(codes.Error, "Handler error")
+				span.RecordError(err)
+			} else {
+				span.SetStatus(codes.Ok, "Request handled successfully")
+			}
+		}()
+
 		switch action {
 		case provisioning.BootNotificationFeatureName:
 			response, err = cs.provisioningHandler.OnBootNotification(ctx, chargingStation.ID(), request.(*provisioning.BootNotificationRequest))
@@ -1012,11 +1045,13 @@ func (cs *csms) handleIncomingRequest(ctx context.Context, chargingStation Charg
 		case transactions.TransactionEventFeatureName:
 			response, err = cs.transactionsHandler.OnTransactionEvent(ctx, chargingStation.ID(), request.(*transactions.TransactionEventRequest))
 		default:
+			span.SetStatus(codes.Error, "Action not supported")
+			span.RecordError(fmt.Errorf("action %s not supported", action))
 			cs.notSupportedError(ctx, chargingStation.ID(), requestId, action)
 			return
 		}
 		cs.sendResponse(ctx, chargingStation.ID(), response, err, requestId)
-	}()
+	}(ctx, span)
 }
 
 func (cs *csms) handleIncomingResponse(chargingStation ChargingStationConnection, response ocpp.Response, requestId string) {

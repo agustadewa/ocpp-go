@@ -231,10 +231,10 @@ func NewChargingStation(id string, endpoint *ocppj.Client, client ws.Client) Cha
 	// Callback invoked by dispatcher, whenever a queued request is canceled, due to timeout.
 	endpoint.SetOnRequestCanceled(cs.onRequestTimeout)
 
-	cs.client.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
+	cs.client.SetResponseHandler(func(ctx context.Context, confirmation ocpp.Response, requestId string) {
 		cs.responseHandler <- confirmation
 	})
-	cs.client.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+	cs.client.SetErrorHandler(func(ctx context.Context, err *ocpp.Error, details interface{}) {
 		cs.errorHandler <- err
 	})
 	cs.client.SetRequestHandler(cs.handleIncomingRequest)

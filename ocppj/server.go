@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/SentimensRG/ctx/mergectx"
-	"github.com/lorenzodonini/ocpp-go/internal/genericmap"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"gopkg.in/go-playground/validator.v9"
@@ -29,7 +27,7 @@ type Server struct {
 	invalidMessageHook        InvalidMessageHook
 	dispatcher                ServerDispatcher
 	RequestState              ServerState
-	contextMap                genericmap.GenericMap[string, context.Context]
+	contextMap                *ContextMap
 }
 
 type ClientHandler func(client ws.Channel)
@@ -66,10 +64,14 @@ func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler Ser
 	dispatcher.SetPendingRequestState(stateHandler)
 
 	// Create server and add profiles
-	s := Server{Endpoint: Endpoint{}, server: wsServer, RequestState: stateHandler, dispatcher: dispatcher, contextMap: genericmap.NewGenericMap[string, context.Context]()}
+	s := Server{Endpoint: Endpoint{}, server: wsServer, RequestState: stateHandler, dispatcher: dispatcher, contextMap: NewContextMap()}
 	for _, profile := range profiles {
 		s.AddProfile(profile)
 	}
+
+	// Set up default timeout handler to clean up context map and close spans
+	s.SetCanceledRequestHandler(nil) // This will set up the cleanup handler
+
 	return &s
 }
 
@@ -108,7 +110,19 @@ func (s *Server) SetInvalidMessageHook(hook InvalidMessageHook) {
 
 // Registers a handler for canceled request messages.
 func (s *Server) SetCanceledRequestHandler(handler CanceledRequestHandler) {
-	s.dispatcher.SetOnRequestCanceled(handler)
+	// Chain the user handler with our internal cleanup handler
+	s.dispatcher.SetOnRequestCanceled(func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error) {
+		// First, clean up our internal context map
+		if _, storedSpan, exists := s.contextMap.LoadAndDelete(requestID); exists {
+			storedSpan.RecordError(fmt.Errorf("request timed out: %s", err.Description))
+			storedSpan.End()
+			log.Debugf("cleaned up context and span for timed out request %s from client %s", requestID, clientID)
+		}
+		// Then call the user's handler if provided
+		if handler != nil {
+			handler(clientID, requestID, request, err)
+		}
+	})
 }
 
 // Registers a handler for incoming client connections.
@@ -168,33 +182,37 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 
 func (s *Server) SendRequestWithContext(ctx context.Context, clientID string, request ocpp.Request) error {
 	tracer := otel.Tracer("ocpp-go/ocppj")
-	ctx, span := tracer.Start(ctx, "server.send_request")
-	defer span.End()
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("csms.out_call.%s", request.GetFeatureName()))
 
 	if !s.dispatcher.IsRunning() {
 		err := fmt.Errorf("ocppj server is not started, couldn't send request")
 		span.RecordError(err)
+		span.End()
 		return err
 	}
 	call, err := s.CreateCall(request)
 	if err != nil {
 		span.RecordError(err)
+		span.End()
 		return err
 	}
 
 	span.SetAttributes(
 		attribute.String("client.id", clientID),
-		attribute.String("request.id", call.UniqueId),
-		attribute.String("request.action", call.Action),
+		attribute.String("ocpp.unique_id", call.UniqueId),
+		attribute.String("ocpp.msg_type", "call"),
+		attribute.String("ocpp.action", call.Action),
+		attribute.String("ocpp.role", "csms"),
 	)
 
 	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
 		span.RecordError(err)
+		span.End()
 		return err
 	}
-	// Store context for later retrieval when response is received
-	s.contextMap.Store(call.UniqueId, ctx)
+	// Store context and span for later retrieval when response is received
+	s.contextMap.Store(call.UniqueId, ctx, span)
 
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
 	if err = s.dispatcher.SendRequestWithContext(ctx, clientID, RequestBundle{call, jsonMessage, ctx}); err != nil {
@@ -202,6 +220,7 @@ func (s *Server) SendRequestWithContext(ctx context.Context, clientID string, re
 		s.contextMap.Delete(call.UniqueId)
 		log.Errorf("error dispatching request [%s, %s] to %s: %v", call.UniqueId, call.Action, clientID, err)
 		span.RecordError(err)
+		span.End() // Close span immediately since dispatch failed
 		return err
 	}
 	log.Debugf("enqueued CALL [%s, %s] for %s", call.UniqueId, call.Action, clientID)
@@ -224,12 +243,14 @@ func (s *Server) SendResponse(clientID string, requestId string, response ocpp.R
 
 func (s *Server) SendResponseWithContext(ctx context.Context, clientID string, requestId string, response ocpp.Response) error {
 	tracer := otel.Tracer("ocpp-go/ocppj")
-	ctx, span := tracer.Start(ctx, "server.send_response")
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("csms.out_call_result.%s", response.GetFeatureName()))
 	defer span.End()
 
 	span.SetAttributes(
 		attribute.String("client.id", clientID),
-		attribute.String("request.id", requestId),
+		attribute.String("ocpp.unique_id", requestId),
+		attribute.String("ocpp.msg_type", "call_result"),
+		attribute.String("ocpp.role", "csms"),
 	)
 
 	callResult, err := s.CreateCallResult(response, requestId)
@@ -268,14 +289,14 @@ func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.Err
 
 func (s *Server) SendErrorWithContext(ctx context.Context, clientID string, requestId string, errorCode ocpp.ErrorCode, description string, details interface{}) error {
 	tracer := otel.Tracer("ocpp-go/ocppj")
-	ctx, span := tracer.Start(ctx, "server.send_error")
+	ctx, span := tracer.Start(ctx, "csms.out_call_error")
 	defer span.End()
 
 	span.SetAttributes(
 		attribute.String("client.id", clientID),
-		attribute.String("request.id", requestId),
-		attribute.String("error.code", string(errorCode)),
-		attribute.String("error.description", description),
+		attribute.String("ocpp.unique_id", requestId),
+		attribute.String("ocpp.error.code", string(errorCode)),
+		attribute.String("ocpp.error.description", description),
 	)
 
 	callError, err := s.CreateCallError(requestId, errorCode, description, details)
@@ -345,13 +366,14 @@ func (s *Server) ocppMessageHandler(ctx context.Context, wsChannel ws.Channel, d
 			callResult := message.(*CallResult)
 			log.Debugf("handling incoming CALL RESULT [%s] from %s", callResult.UniqueId, wsChannel.ID())
 
-			// Retrieve and clean up stored context
-			if storedCtx, exists := s.contextMap.LoadAndDelete(callResult.UniqueId); exists {
-				// StoredCtx first because it will be selected first
-				mergedCtx := mergectx.Join(storedCtx, ctx)
-				// Create a span for response handling using the stored context
+			// Retrieve and clean up stored context and span
+			if storedCtx, storedSpan, exists := s.contextMap.LoadAndDelete(callResult.UniqueId); exists {
+				// Close the original request span
+				storedSpan.End()
+
+				// Create a child span for response handling using the stored context
 				tracer := otel.Tracer("ocpp-go/ocppj")
-				_, span := tracer.Start(mergedCtx, "server.handle_response")
+				_, span := tracer.Start(storedCtx, "server.handle_response")
 				span.SetAttributes(
 					attribute.String("response.id", callResult.UniqueId),
 					attribute.String("client.id", wsChannel.ID()),
@@ -367,13 +389,15 @@ func (s *Server) ocppMessageHandler(ctx context.Context, wsChannel ws.Channel, d
 			callError := message.(*CallError)
 			log.Debugf("handling incoming CALL ERROR [%s] from %s", callError.UniqueId, wsChannel.ID())
 
-			// Retrieve and clean up stored context
-			if storedCtx, exists := s.contextMap.LoadAndDelete(callError.UniqueId); exists {
-				// StoredCtx first because it will be selected first
-				mergedCtx := mergectx.Join(storedCtx, ctx)
-				// Create a span for error handling using the stored context
+			// Retrieve and clean up stored context and span
+			if storedCtx, storedSpan, exists := s.contextMap.LoadAndDelete(callError.UniqueId); exists {
+				// Close the original request span with error status
+				storedSpan.RecordError(fmt.Errorf("OCPP call error: %s - %s", callError.ErrorCode, callError.ErrorDescription))
+				storedSpan.End()
+
+				// Create a child span for error handling using the stored context
 				tracer := otel.Tracer("ocpp-go/ocppj")
-				_, span := tracer.Start(mergedCtx, "server.handle_error")
+				_, span := tracer.Start(storedCtx, "server.handle_error")
 				span.SetAttributes(
 					attribute.String("error.id", callError.UniqueId),
 					attribute.String("error.code", string(callError.ErrorCode)),

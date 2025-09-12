@@ -414,7 +414,8 @@ func (suite *OcppJTestSuite) TestChargePointCallResultHandler() {
 	mockValue := "someValue"
 	mockRequest := newMockRequest("testValue")
 	mockConfirmation := fmt.Sprintf(`[3,"%v",{"mockValue":"%v"}]`, mockUniqueId, mockValue)
-	suite.chargePoint.SetResponseHandler(func(confirmation ocpp.Response, requestId string) {
+	suite.chargePoint.SetResponseHandler(func(ctx context.Context, confirmation ocpp.Response, requestId string) {
+		assert.NotNil(t, ctx)
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.NotNil(t, confirmation)
 	})
@@ -438,7 +439,8 @@ func (suite *OcppJTestSuite) TestChargePointCallErrorHandler() {
 
 	mockRequest := newMockRequest("testValue")
 	mockError := fmt.Sprintf(`[4,"%v","%v","%v",{"details":"%v"}]`, mockUniqueId, mockErrorCode, mockErrorDescription, mockValue)
-	suite.chargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+	suite.chargePoint.SetErrorHandler(func(ctx context.Context, err *ocpp.Error, details interface{}) {
+		assert.NotNil(t, ctx)
 		assert.Equal(t, mockUniqueId, err.MessageId)
 		assert.Equal(t, mockErrorCode, err.Code)
 		assert.Equal(t, mockErrorDescription, err.Description)

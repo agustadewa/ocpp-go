@@ -1,9 +1,12 @@
 package ocppj
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
@@ -24,10 +27,11 @@ type Server struct {
 	invalidMessageHook        InvalidMessageHook
 	dispatcher                ServerDispatcher
 	RequestState              ServerState
+	contextMap                *ContextMap
 }
 
 type ClientHandler func(client ws.Channel)
-type RequestHandler func(client ws.Channel, request ocpp.Request, requestId string, action string)
+type RequestHandler func(ctx context.Context, client ws.Channel, request ocpp.Request, requestId string, action string)
 type ResponseHandler func(client ws.Channel, response ocpp.Response, requestId string)
 type ErrorHandler func(client ws.Channel, err *ocpp.Error, details interface{})
 type InvalidMessageHook func(client ws.Channel, err *ocpp.Error, rawJson string, parsedFields []interface{}) *ocpp.Error
@@ -60,10 +64,14 @@ func NewServer(wsServer ws.Server, dispatcher ServerDispatcher, stateHandler Ser
 	dispatcher.SetPendingRequestState(stateHandler)
 
 	// Create server and add profiles
-	s := Server{Endpoint: Endpoint{}, server: wsServer, RequestState: stateHandler, dispatcher: dispatcher}
+	s := Server{Endpoint: Endpoint{}, server: wsServer, RequestState: stateHandler, dispatcher: dispatcher, contextMap: NewContextMap()}
 	for _, profile := range profiles {
 		s.AddProfile(profile)
 	}
+
+	// Set up default timeout handler to clean up context map and close spans
+	s.SetCanceledRequestHandler(nil) // This will set up the cleanup handler
+
 	return &s
 }
 
@@ -102,7 +110,19 @@ func (s *Server) SetInvalidMessageHook(hook InvalidMessageHook) {
 
 // Registers a handler for canceled request messages.
 func (s *Server) SetCanceledRequestHandler(handler CanceledRequestHandler) {
-	s.dispatcher.SetOnRequestCanceled(handler)
+	// Chain the user handler with our internal cleanup handler
+	s.dispatcher.SetOnRequestCanceled(func(clientID string, requestID string, request ocpp.Request, err *ocpp.Error) {
+		// First, clean up our internal context map
+		if _, storedSpan, exists := s.contextMap.LoadAndDelete(requestID); exists {
+			storedSpan.RecordError(fmt.Errorf("request timed out: %s", err.Description))
+			storedSpan.End()
+			log.Debugf("cleaned up context and span for timed out request %s from client %s", requestID, clientID)
+		}
+		// Then call the user's handler if provided
+		if handler != nil {
+			handler(clientID, requestID, request, err)
+		}
+	})
 }
 
 // Registers a handler for incoming client connections.
@@ -157,20 +177,50 @@ func (s *Server) Stop() {
 //
 // - the output queue is full
 func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
+	return s.SendRequestWithContext(context.Background(), clientID, request)
+}
+
+func (s *Server) SendRequestWithContext(ctx context.Context, clientID string, request ocpp.Request) error {
+	tracer := otel.Tracer("ocpp-go/ocppj")
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("csms.out_call.%s", request.GetFeatureName()))
+
 	if !s.dispatcher.IsRunning() {
-		return fmt.Errorf("ocppj server is not started, couldn't send request")
+		err := fmt.Errorf("ocppj server is not started, couldn't send request")
+		span.RecordError(err)
+		span.End()
+		return err
 	}
 	call, err := s.CreateCall(request)
 	if err != nil {
+		span.RecordError(err)
+		span.End()
 		return err
 	}
+
+	span.SetAttributes(
+		attribute.String("client.id", clientID),
+		attribute.String("ocpp.unique_id", call.UniqueId),
+		attribute.String("ocpp.msg_type", "call"),
+		attribute.String("ocpp.action", call.Action),
+		attribute.String("ocpp.role", "csms"),
+	)
+
 	jsonMessage, err := call.MarshalJSON()
 	if err != nil {
+		span.RecordError(err)
+		span.End()
 		return err
 	}
+	// Store context and span for later retrieval when response is received
+	s.contextMap.Store(call.UniqueId, ctx, span)
+
 	// Will not send right away. Queuing message and let it be processed by dedicated requestPump routine
-	if err = s.dispatcher.SendRequest(clientID, RequestBundle{call, jsonMessage}); err != nil {
+	if err = s.dispatcher.SendRequestWithContext(ctx, clientID, RequestBundle{call, jsonMessage, ctx}); err != nil {
+		// Remove context from map if dispatch fails
+		s.contextMap.Delete(call.UniqueId)
 		log.Errorf("error dispatching request [%s, %s] to %s: %v", call.UniqueId, call.Action, clientID, err)
+		span.RecordError(err)
+		span.End() // Close span immediately since dispatch failed
 		return err
 	}
 	log.Debugf("enqueued CALL [%s, %s] for %s", call.UniqueId, call.Action, clientID)
@@ -188,17 +238,37 @@ func (s *Server) SendRequest(clientID string, request ocpp.Request) error {
 //
 // - a network error occurred
 func (s *Server) SendResponse(clientID string, requestId string, response ocpp.Response) error {
+	return s.SendResponseWithContext(context.Background(), clientID, requestId, response)
+}
+
+func (s *Server) SendResponseWithContext(ctx context.Context, clientID string, requestId string, response ocpp.Response) error {
+	tracer := otel.Tracer("ocpp-go/ocppj")
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("csms.out_call_result.%s", response.GetFeatureName()))
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("client.id", clientID),
+		attribute.String("ocpp.unique_id", requestId),
+		attribute.String("ocpp.msg_type", "call_result"),
+		attribute.String("ocpp.role", "csms"),
+	)
+
 	callResult, err := s.CreateCallResult(response, requestId)
 	if err != nil {
+		span.RecordError(err)
 		return err
 	}
 	jsonMessage, err := callResult.MarshalJSON()
 	if err != nil {
-		return ocpp.NewError(GenericError, err.Error(), requestId)
+		err = ocpp.NewError(GenericError, err.Error(), requestId)
+		span.RecordError(err)
+		return err
 	}
-	if err = s.server.Write(clientID, jsonMessage); err != nil {
+	if err = s.server.WriteWithContext(ctx, clientID, jsonMessage); err != nil {
 		log.Errorf("error sending response [%s] to %s: %v", callResult.GetUniqueId(), clientID, err)
-		return ocpp.NewError(GenericError, err.Error(), requestId)
+		err = ocpp.NewError(GenericError, err.Error(), requestId)
+		span.RecordError(err)
+		return err
 	}
 	log.Debugf("sent CALL RESULT [%s] for %s", callResult.GetUniqueId(), clientID)
 	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
@@ -214,24 +284,44 @@ func (s *Server) SendResponse(clientID string, requestId string, response ocpp.R
 //
 // - a network error occurred
 func (s *Server) SendError(clientID string, requestId string, errorCode ocpp.ErrorCode, description string, details interface{}) error {
+	return s.SendErrorWithContext(context.Background(), clientID, requestId, errorCode, description, details)
+}
+
+func (s *Server) SendErrorWithContext(ctx context.Context, clientID string, requestId string, errorCode ocpp.ErrorCode, description string, details interface{}) error {
+	tracer := otel.Tracer("ocpp-go/ocppj")
+	ctx, span := tracer.Start(ctx, "csms.out_call_error")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("client.id", clientID),
+		attribute.String("ocpp.unique_id", requestId),
+		attribute.String("ocpp.error.code", string(errorCode)),
+		attribute.String("ocpp.error.description", description),
+	)
+
 	callError, err := s.CreateCallError(requestId, errorCode, description, details)
 	if err != nil {
+		span.RecordError(err)
 		return err
 	}
 	jsonMessage, err := callError.MarshalJSON()
 	if err != nil {
-		return ocpp.NewError(GenericError, err.Error(), requestId)
+		err = ocpp.NewError(GenericError, err.Error(), requestId)
+		span.RecordError(err)
+		return err
 	}
-	if err = s.server.Write(clientID, jsonMessage); err != nil {
+	if err = s.server.WriteWithContext(ctx, clientID, jsonMessage); err != nil {
 		log.Errorf("error sending response error [%s] to %s: %v", callError.UniqueId, clientID, err)
-		return ocpp.NewError(GenericError, err.Error(), requestId)
+		err = ocpp.NewError(GenericError, err.Error(), requestId)
+		span.RecordError(err)
+		return err
 	}
 	log.Debugf("sent CALL ERROR [%s] for %s", callError.UniqueId, clientID)
 	log.Debugf("sent JSON message to %s: %s", clientID, string(jsonMessage))
 	return nil
 }
 
-func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
+func (s *Server) ocppMessageHandler(ctx context.Context, wsChannel ws.Channel, data []byte) error {
 	parsedJson, err := ParseRawJsonMessage(data)
 	if err != nil {
 		log.Error(err)
@@ -256,7 +346,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 		err = ocppErr
 		// Send error to other endpoint if a message ID is available
 		if ocppErr.MessageId != "" {
-			err2 := s.SendError(wsChannel.ID(), ocppErr.MessageId, ocppErr.Code, ocppErr.Description, nil)
+			err2 := s.SendErrorWithContext(ctx, wsChannel.ID(), ocppErr.MessageId, ocppErr.Code, ocppErr.Description, nil)
 			if err2 != nil {
 				return err2
 			}
@@ -270,18 +360,53 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 			call := message.(*Call)
 			log.Debugf("handling incoming CALL [%s, %s] from %s", call.UniqueId, call.Action, wsChannel.ID())
 			if s.requestHandler != nil {
-				s.requestHandler(wsChannel, call.Payload, call.UniqueId, call.Action)
+				s.requestHandler(ctx, wsChannel, call.Payload, call.UniqueId, call.Action)
 			}
 		case CALL_RESULT:
 			callResult := message.(*CallResult)
 			log.Debugf("handling incoming CALL RESULT [%s] from %s", callResult.UniqueId, wsChannel.ID())
+
+			// Retrieve and clean up stored context and span
+			if storedCtx, storedSpan, exists := s.contextMap.LoadAndDelete(callResult.UniqueId); exists {
+				// Close the original request span
+				storedSpan.End()
+
+				// Create a child span for response handling using the stored context
+				tracer := otel.Tracer("ocpp-go/ocppj")
+				_, span := tracer.Start(storedCtx, "server.handle_response")
+				span.SetAttributes(
+					attribute.String("response.id", callResult.UniqueId),
+					attribute.String("client.id", wsChannel.ID()),
+				)
+				span.End()
+			}
+
 			s.dispatcher.CompleteRequest(wsChannel.ID(), callResult.GetUniqueId())
 			if s.responseHandler != nil {
 				s.responseHandler(wsChannel, callResult.Payload, callResult.UniqueId)
 			}
 		case CALL_ERROR:
 			callError := message.(*CallError)
-			log.Debugf("handling incoming CALL RESULT [%s] from %s", callError.UniqueId, wsChannel.ID())
+			log.Debugf("handling incoming CALL ERROR [%s] from %s", callError.UniqueId, wsChannel.ID())
+
+			// Retrieve and clean up stored context and span
+			if storedCtx, storedSpan, exists := s.contextMap.LoadAndDelete(callError.UniqueId); exists {
+				// Close the original request span with error status
+				storedSpan.RecordError(fmt.Errorf("OCPP call error: %s - %s", callError.ErrorCode, callError.ErrorDescription))
+				storedSpan.End()
+
+				// Create a child span for error handling using the stored context
+				tracer := otel.Tracer("ocpp-go/ocppj")
+				_, span := tracer.Start(storedCtx, "server.handle_error")
+				span.SetAttributes(
+					attribute.String("error.id", callError.UniqueId),
+					attribute.String("error.code", string(callError.ErrorCode)),
+					attribute.String("error.description", callError.ErrorDescription),
+					attribute.String("client.id", wsChannel.ID()),
+				)
+				span.End()
+			}
+
 			s.dispatcher.CompleteRequest(wsChannel.ID(), callError.GetUniqueId())
 			if s.errorHandler != nil {
 				s.errorHandler(wsChannel, ocpp.NewError(callError.ErrorCode, callError.ErrorDescription, callError.UniqueId), callError.ErrorDetails)
@@ -298,7 +423,7 @@ func (s *Server) ocppMessageHandler(wsChannel ws.Channel, data []byte) error {
 // The function helps to prevent starvation on the other endpoint, which is caused by a response never reaching it.
 // The method will, however, only attempt to send a default error once.
 // If this operation fails, the other endpoint may still starve.
-func (s *Server) HandleFailedResponseError(clientID string, requestID string, err error, featureName string) {
+func (s *Server) HandleFailedResponseError(ctx context.Context, clientID string, requestID string, err error, featureName string) {
 	log.Debugf("handling error for failed response [%s]", requestID)
 	var responseErr *ocpp.Error
 	// There's several possible errors: invalid profile, invalid payload or send error
@@ -316,7 +441,7 @@ func (s *Server) HandleFailedResponseError(clientID string, requestID string, er
 		responseErr = ocpp.NewError(GenericError, err.Error(), requestID)
 	}
 	// Send an OCPP error to the target, since no regular response could be sent
-	_ = s.SendError(clientID, requestID, responseErr.Code, responseErr.Description, nil)
+	_ = s.SendErrorWithContext(ctx, clientID, requestID, responseErr.Code, responseErr.Description, nil)
 }
 
 func (s *Server) onClientConnected(ws ws.Channel) {

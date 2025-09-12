@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ func (suite *OcppV2TestSuite) TestPublishFirmwareStatusNotificationRequestValida
 		{firmware.PublishFirmwareStatusNotificationRequest{Status: "invalidStatus"}, false},
 		{firmware.PublishFirmwareStatusNotificationRequest{Status: firmware.PublishFirmwareStatusPublished, Location: []string{"http://someUri"}, RequestID: newInt(-1)}, false},
 		{firmware.PublishFirmwareStatusNotificationRequest{Status: firmware.PublishFirmwareStatusPublished, Location: []string{"http://someUri>512..............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................."}, RequestID: newInt(42)}, false},
-		//TODO: add test for empty location field with published status
+		// TODO: add test for empty location field with published status
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -73,7 +74,7 @@ func (suite *OcppV2TestSuite) TestPublishFirmwareStatusNotificationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.PublishFirmwareStatusNotification(status, func(request *firmware.PublishFirmwareStatusNotificationRequest) {
+	response, err := suite.chargingStation.PublishFirmwareStatusNotification(context.Background(), status, func(request *firmware.PublishFirmwareStatusNotificationRequest) {
 		request.Location = location
 		request.RequestID = requestID
 	})

@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -99,7 +100,7 @@ func (suite *OcppV16TestSuite) TestRemoteStartTransactionE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.RemoteStartTransaction(wsId, func(confirmation *core.RemoteStartTransactionConfirmation, err error) {
+	err = suite.centralSystem.RemoteStartTransaction(context.Background(), wsId, func(confirmation *core.RemoteStartTransactionConfirmation, err error) {
 		assert.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

@@ -1,8 +1,9 @@
 package firmware
 
 import (
-	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"reflect"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 )
 
 // -------------------- Get Diagnostics (CS -> CP) --------------------

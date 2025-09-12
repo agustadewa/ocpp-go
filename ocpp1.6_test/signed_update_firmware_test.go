@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -96,7 +97,7 @@ func (suite *OcppV16TestSuite) TestSignedUpdateFirmwareE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.SignedUpdateFirmware(wsId, func(resp *securefirmware.SignedUpdateFirmwareResponse, err error) {
+	err = suite.centralSystem.SignedUpdateFirmware(context.Background(), wsId, func(resp *securefirmware.SignedUpdateFirmwareResponse, err error) {
 		assert.Nil(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, status, resp.Status)

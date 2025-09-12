@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"go.opentelemetry.io/otel"
 )
 
 // ---------------------- CLIENT ----------------------
@@ -82,7 +84,7 @@ type Client interface {
 	// Creating the error channel while the client is running may lead to unexpected behavior.
 	Errors() <-chan error
 	// Sets a callback function for all incoming messages.
-	SetMessageHandler(handler func(data []byte) error)
+	SetMessageHandler(handler func(ctx context.Context, data []byte) error)
 	// Set custom timeout configuration parameters. If not passed, a default ClientTimeoutConfig struct will be used.
 	//
 	// This function must be called before connecting to the server, otherwise it may lead to unexpected behavior.
@@ -104,6 +106,10 @@ type Client interface {
 	//
 	// The data is queued and will be sent asynchronously in the background.
 	Write(data []byte) error
+	// Sends a message to the server over the websocket with context for tracing.
+	//
+	// The data is queued and will be sent asynchronously in the background.
+	WriteWithContext(ctx context.Context, data []byte) error
 	// Adds a websocket option to the client.
 	AddOption(option interface{})
 	// SetRequestedSubProtocol will negotiate the specified sub-protocol during the websocket handshake.
@@ -126,7 +132,7 @@ type Client interface {
 type client struct {
 	webSocket      *webSocket
 	url            url.URL
-	messageHandler func(data []byte) error
+	messageHandler func(ctx context.Context, data []byte) error
 	dialOptions    []func(*websocket.Dialer)
 	header         http.Header
 	timeoutConfig  ClientTimeoutConfig
@@ -190,7 +196,7 @@ func NewClient(opts ...ClientOpt) Client {
 	return c
 }
 
-func (c *client) SetMessageHandler(handler func(data []byte) error) {
+func (c *client) SetMessageHandler(handler func(ctx context.Context, data []byte) error) {
 	c.messageHandler = handler
 }
 
@@ -286,11 +292,21 @@ func (c *client) IsConnected() bool {
 }
 
 func (c *client) Write(data []byte) error {
+	return c.WriteWithContext(context.Background(), data)
+}
+
+func (c *client) WriteWithContext(ctx context.Context, data []byte) error {
+	tracer := otel.Tracer("ocpp-go/ws")
+	ctx, span := tracer.Start(ctx, "client.write")
+	defer span.End()
+
 	if !c.IsConnected() {
-		return fmt.Errorf("client is currently not connected, cannot send data")
+		err := fmt.Errorf("client is currently not connected, cannot send data")
+		span.RecordError(err)
+		return err
 	}
 	log.Debugf("queuing data for server")
-	return c.webSocket.Write(data)
+	return c.webSocket.WriteWithContext(ctx, data)
 }
 
 func (c *client) StartWithRetries(urlStr string) {
@@ -403,9 +419,9 @@ func (c *client) Errors() <-chan error {
 }
 
 // --------- Internal callbacks webSocket -> client ---------
-func (c *client) handleMessage(_ Channel, data []byte) error {
+func (c *client) handleMessage(ctx context.Context, _ Channel, data []byte) error {
 	if c.messageHandler != nil {
-		return c.messageHandler(data)
+		return c.messageHandler(ctx, data)
 	}
 	return fmt.Errorf("no message handler set")
 }

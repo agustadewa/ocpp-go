@@ -40,7 +40,7 @@ func isValidPublishFirmwareStatus(fl validator.FieldLevel) bool {
 // The field definition of the PublishFirmwareStatusNotification request payload sent by the Charging Station to the CSMS.
 type PublishFirmwareStatusNotificationRequest struct {
 	Status PublishFirmwareStatus `json:"status" validate:"required,publishFirmwareStatus"` // This contains the progress status of the publishfirmware installation.
-	//TODO: add required_if validation tag after upgrade to govalidator v10
+	// TODO: add required_if validation tag after upgrade to govalidator v10
 	Location  []string `json:"location,omitempty" validate:"omitempty,dive,max=512"` // Can be multiple URI’s, if the Local Controller supports e.g. HTTP, HTTPS, and FTP.
 	RequestID *int     `json:"requestId,omitempty" validate:"omitempty,gte=0"`       // The request id that was provided in the PublishFirmwareRequest which triggered this action.
 }

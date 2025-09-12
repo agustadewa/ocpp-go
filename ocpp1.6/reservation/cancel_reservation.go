@@ -1,9 +1,10 @@
 package reservation
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Cancel Reservation (CS -> CP) --------------------

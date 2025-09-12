@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -83,7 +84,7 @@ func (suite *OcppV2TestSuite) TestSetDisplayMessageE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.SetDisplayMessage(wsId, func(response *display.SetDisplayMessageResponse, err error) {
+	err = suite.csms.SetDisplayMessage(context.Background(), wsId, func(response *display.SetDisplayMessageResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, status, response.Status)

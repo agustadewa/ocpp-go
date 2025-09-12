@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
@@ -50,7 +51,7 @@ func (suite *OcppV16TestSuite) TestGetInstalledCertificateIdsE2EMocked() {
 
 	// Setting handlers
 	handler := mocks.NewMockCertificatesChargePointHandler(t)
-	handler.EXPECT().OnGetInstalledCertificateIds(mock.Anything).RunAndReturn(func(request *certificates.GetInstalledCertificateIdsRequest) (*certificates.GetInstalledCertificateIdsResponse, error) {
+	handler.EXPECT().OnGetInstalledCertificateIds(context.Background(), mock.Anything).RunAndReturn(func(request *certificates.GetInstalledCertificateIdsRequest) (*certificates.GetInstalledCertificateIdsResponse, error) {
 		assert.Equal(t, certificateType, request.CertificateType)
 		return getInstalledCertificateIdsConfirmation, nil
 	})
@@ -65,7 +66,7 @@ func (suite *OcppV16TestSuite) TestGetInstalledCertificateIdsE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.GetInstalledCertificateIds(wsId, func(confirmation *certificates.GetInstalledCertificateIdsResponse, err error) {
+	err = suite.centralSystem.GetInstalledCertificateIds(context.Background(), wsId, func(confirmation *certificates.GetInstalledCertificateIdsResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

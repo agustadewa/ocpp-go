@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -84,7 +85,7 @@ func (suite *OcppV16TestSuite) TestGetCompositeScheduleE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.GetCompositeSchedule(wsId, func(confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
+	err = suite.centralSystem.GetCompositeSchedule(context.Background(), wsId, func(confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/firmware"
 )
 
-func (c *CSMSHandler) OnFirmwareStatusNotification(chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (response *firmware.FirmwareStatusNotificationResponse, err error) {
+func (c *CSMSHandler) OnFirmwareStatusNotification(ctx context.Context, chargingStationID string, request *firmware.FirmwareStatusNotificationRequest) (response *firmware.FirmwareStatusNotificationResponse, err error) {
 	info, ok := c.chargingStations[chargingStationID]
 	if !ok {
 		err = fmt.Errorf("unknown charging station %v", chargingStationID)
@@ -17,7 +19,7 @@ func (c *CSMSHandler) OnFirmwareStatusNotification(chargingStationID string, req
 	return
 }
 
-func (c *CSMSHandler) OnPublishFirmwareStatusNotification(chargingStationID string, request *firmware.PublishFirmwareStatusNotificationRequest) (response *firmware.PublishFirmwareStatusNotificationResponse, err error) {
+func (c *CSMSHandler) OnPublishFirmwareStatusNotification(ctx context.Context, chargingStationID string, request *firmware.PublishFirmwareStatusNotificationRequest) (response *firmware.PublishFirmwareStatusNotificationResponse, err error) {
 	if len(request.Location) > 0 {
 		logDefault(chargingStationID, request.GetFeatureName()).Infof("firmware download status on local controller: %v, download locations: %v", request.Status, request.Location)
 	} else {

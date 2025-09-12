@@ -8,6 +8,8 @@ import (
 
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // ClientDispatcher contains the state and logic for handling outgoing messages on a client endpoint.
@@ -40,6 +42,11 @@ type ClientDispatcher interface {
 	//
 	// If no network client was set, or the request couldn't be processed, an error is returned.
 	SendRequest(req RequestBundle) error
+	// Dispatches a request with context for tracing. Depending on the implementation, this may first queue a request
+	// and process it later, asynchronously, or write it directly to the networking layer.
+	//
+	// If no network client was set, or the request couldn't be processed, an error is returned.
+	SendRequestWithContext(ctx context.Context, req RequestBundle) error
 	// Notifies the dispatcher that a request has been completed (i.e. a response was received).
 	// The dispatcher takes care of removing the request marked by the requestID from
 	// the pending requests. It will then attempt to process the next queued request.
@@ -158,10 +165,30 @@ func (d *DefaultClientDispatcher) SetPendingRequestState(state ClientState) {
 }
 
 func (d *DefaultClientDispatcher) SendRequest(req RequestBundle) error {
+	return d.SendRequestWithContext(context.Background(), req)
+}
+
+func (d *DefaultClientDispatcher) SendRequestWithContext(ctx context.Context, req RequestBundle) error {
+	tracer := otel.Tracer("ocpp-go/ocppj")
+	ctx, span := tracer.Start(ctx, "dispatcher.send_request")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("request.id", req.Call.UniqueId),
+		attribute.String("request.action", req.Call.Action),
+	)
+
 	if d.network == nil {
-		return fmt.Errorf("cannot SendRequest, no network client was set")
+		err := fmt.Errorf("cannot SendRequest, no network client was set")
+		span.RecordError(err)
+		return err
 	}
+
+	// Store context in the request bundle for later use
+	req.Ctx = ctx
+
 	if err := d.requestQueue.Push(req); err != nil {
+		span.RecordError(err)
 		return err
 	}
 	d.mutex.RLock()
@@ -236,8 +263,15 @@ func (d *DefaultClientDispatcher) dispatchNextRequest() {
 	bundle, _ := el.(RequestBundle)
 	jsonMessage := bundle.Data
 	d.pendingRequestState.AddPendingRequest(bundle.Call.UniqueId, bundle.Call.Payload)
-	// Attempt to send over network
-	err := d.network.Write(jsonMessage)
+
+	// Use context from bundle, fallback to background if not set
+	ctx := bundle.Ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Attempt to send over network with context
+	err := d.network.WriteWithContext(ctx, jsonMessage)
 	if err != nil {
 		// TODO: handle retransmission instead of skipping request altogether
 		d.CompleteRequest(bundle.Call.GetUniqueId())
@@ -319,6 +353,11 @@ type ServerDispatcher interface {
 	//
 	// If no network server was set, or the request couldn't be processed, an error is returned.
 	SendRequest(clientID string, req RequestBundle) error
+	// Dispatches a request for a specific client with context for tracing. Depending on the implementation, this may first queue
+	// a request and process it later (asynchronously), or write it directly to the networking layer.
+	//
+	// If no network server was set, or the request couldn't be processed, an error is returned.
+	SendRequestWithContext(ctx context.Context, clientID string, req RequestBundle) error
 	// Notifies the dispatcher that a request has been completed (i.e. a response was received),
 	// for a specific client.
 	// The dispatcher takes care of removing the request marked by the requestID from
@@ -455,14 +494,37 @@ func (d *DefaultServerDispatcher) SetPendingRequestState(state ServerState) {
 }
 
 func (d *DefaultServerDispatcher) SendRequest(clientID string, req RequestBundle) error {
+	return d.SendRequestWithContext(context.Background(), clientID, req)
+}
+
+func (d *DefaultServerDispatcher) SendRequestWithContext(ctx context.Context, clientID string, req RequestBundle) error {
+	tracer := otel.Tracer("ocpp-go/ocppj")
+	ctx, span := tracer.Start(ctx, "server_dispatcher.send_request")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("client.id", clientID),
+		attribute.String("request.id", req.Call.UniqueId),
+		attribute.String("request.action", req.Call.Action),
+	)
+
 	if d.network == nil {
-		return fmt.Errorf("cannot send request %v, no network server was set", req.Call.UniqueId)
+		err := fmt.Errorf("cannot send request %v, no network server was set", req.Call.UniqueId)
+		span.RecordError(err)
+		return err
 	}
 	q, ok := d.queueMap.Get(clientID)
 	if !ok {
-		return fmt.Errorf("cannot send request %s, no client %s exists", req.Call.UniqueId, clientID)
+		err := fmt.Errorf("cannot send request %s, no client %s exists", req.Call.UniqueId, clientID)
+		span.RecordError(err)
+		return err
 	}
+
+	// Store context in the request bundle for later use
+	req.Ctx = ctx
+
 	if err := q.Push(req); err != nil {
+		span.RecordError(err)
 		return err
 	}
 	d.mutex.RLock()
@@ -593,7 +655,14 @@ func (d *DefaultServerDispatcher) dispatchNextRequest(clientID string) (clientCt
 	jsonMessage := bundle.Data
 	callID := bundle.Call.GetUniqueId()
 	d.pendingRequestState.AddPendingRequest(clientID, callID, bundle.Call.Payload)
-	err := d.network.Write(clientID, jsonMessage)
+
+	// Use context from bundle, fallback to background if not set
+	ctx := bundle.Ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	err := d.network.WriteWithContext(ctx, clientID, jsonMessage)
 	if err != nil {
 		log.Errorf("error while sending message: %v", err)
 		// TODO: handle retransmission instead of removing pending request

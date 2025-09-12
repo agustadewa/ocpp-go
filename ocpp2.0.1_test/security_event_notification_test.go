@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -64,7 +65,7 @@ func (suite *OcppV2TestSuite) TestSecurityEventNotificationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.SecurityEventNotification(typ, timestamp, func(request *security.SecurityEventNotificationRequest) {
+	response, err := suite.chargingStation.SecurityEventNotification(context.Background(), typ, timestamp, func(request *security.SecurityEventNotificationRequest) {
 		request.TechInfo = techInfo
 	})
 	require.Nil(t, err)

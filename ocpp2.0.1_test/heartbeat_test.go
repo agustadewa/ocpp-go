@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -53,7 +54,7 @@ func (suite *OcppV2TestSuite) TestHeartbeatE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
-	response, err := suite.chargingStation.Heartbeat()
+	response, err := suite.chargingStation.Heartbeat(context.Background())
 	assert.Nil(t, err)
 	assert.NotNil(t, response)
 	assertDateTimeEquality(t, currentTime, &response.CurrentTime)

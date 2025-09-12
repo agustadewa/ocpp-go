@@ -2,7 +2,11 @@
 // Local lists are used for offline and generally optimized authorization.
 package localauth
 
-import "github.com/lorenzodonini/ocpp-go/ocpp"
+import (
+	"context"
+
+	"github.com/lorenzodonini/ocpp-go/ocpp"
+)
 
 // Needs to be implemented by a CSMS for handling messages part of the OCPP 2.0 Local Authorization List profile.
 type CSMSHandler interface {
@@ -11,9 +15,9 @@ type CSMSHandler interface {
 // Needs to be implemented by Charging stations for handling messages part of the OCPP 2.0 Local Authorization List profile.
 type ChargingStationHandler interface {
 	// OnGetLocalListVersion is called on a charging station whenever a GetLocalListVersionRequest is received from the CSMS.
-	OnGetLocalListVersion(request *GetLocalListVersionRequest) (response *GetLocalListVersionResponse, err error)
+	OnGetLocalListVersion(ctx context.Context, request *GetLocalListVersionRequest) (response *GetLocalListVersionResponse, err error)
 	// OnSendLocalList is called on a charging station whenever a SendLocalListRequest is received from the CSMS.
-	OnSendLocalList(request *SendLocalListRequest) (response *SendLocalListResponse, err error)
+	OnSendLocalList(ctx context.Context, request *SendLocalListRequest) (response *SendLocalListResponse, err error)
 }
 
 const ProfileName = "LocalAuthList"

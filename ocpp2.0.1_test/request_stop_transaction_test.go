@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/remotecontrol"
@@ -64,7 +65,7 @@ func (suite *OcppV2TestSuite) TestRequestStopTransactionE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.RequestStopTransaction(wsId, func(response *remotecontrol.RequestStopTransactionResponse, err error) {
+	err = suite.csms.RequestStopTransaction(context.Background(), wsId, func(response *remotecontrol.RequestStopTransactionResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
 		assert.Equal(t, status, response.Status)

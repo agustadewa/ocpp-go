@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	security "github.com/lorenzodonini/ocpp-go/ocpp1.6/security"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockSecurityCentralSystemHandler) EXPECT() *MockSecurityCentralSystemH
 }
 
 // OnSecurityEventNotification provides a mock function with given fields: chargingStationID, request
-func (_m *MockSecurityCentralSystemHandler) OnSecurityEventNotification(chargingStationID string, request *security.SecurityEventNotificationRequest) (*security.SecurityEventNotificationResponse, error) {
+func (_m *MockSecurityCentralSystemHandler) OnSecurityEventNotification(ctx context.Context, chargingStationID string, request *security.SecurityEventNotificationRequest) (*security.SecurityEventNotificationResponse, error) {
 	ret := _m.Called(chargingStationID, request)
 
 	if len(ret) == 0 {
@@ -30,14 +32,14 @@ func (_m *MockSecurityCentralSystemHandler) OnSecurityEventNotification(charging
 
 	var r0 *security.SecurityEventNotificationResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, *security.SecurityEventNotificationRequest) (*security.SecurityEventNotificationResponse, error)); ok {
+	if rf, ok := ret.Get(1).(func(string, *security.SecurityEventNotificationRequest) (*security.SecurityEventNotificationResponse, error)); ok {
 		return rf(chargingStationID, request)
 	}
-	if rf, ok := ret.Get(0).(func(string, *security.SecurityEventNotificationRequest) *security.SecurityEventNotificationResponse); ok {
+	if rf, ok := ret.Get(1).(func(string, *security.SecurityEventNotificationRequest) *security.SecurityEventNotificationResponse); ok {
 		r0 = rf(chargingStationID, request)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*security.SecurityEventNotificationResponse)
+		if ret.Get(1) != nil {
+			r0 = ret.Get(1).(*security.SecurityEventNotificationResponse)
 		}
 	}
 
@@ -80,7 +82,7 @@ func (_c *MockSecurityCentralSystemHandler_OnSecurityEventNotification_Call) Run
 }
 
 // OnSignCertificate provides a mock function with given fields: chargingStationID, request
-func (_m *MockSecurityCentralSystemHandler) OnSignCertificate(chargingStationID string, request *security.SignCertificateRequest) (*security.SignCertificateResponse, error) {
+func (_m *MockSecurityCentralSystemHandler) OnSignCertificate(ctx context.Context, chargingStationID string, request *security.SignCertificateRequest) (*security.SignCertificateResponse, error) {
 	ret := _m.Called(chargingStationID, request)
 
 	if len(ret) == 0 {

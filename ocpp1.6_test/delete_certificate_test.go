@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/certificates"
@@ -48,7 +49,7 @@ func (suite *OcppV16TestSuite) TestDeleteCertificateE2EMocked() {
 	channel := NewMockWebSocket(wsId)
 
 	handler := mocks.NewMockCertificatesChargePointHandler(t)
-	handler.EXPECT().OnDeleteCertificate(mock.Anything).RunAndReturn(func(request *certificates.DeleteCertificateRequest) (*certificates.DeleteCertificateResponse, error) {
+	handler.EXPECT().OnDeleteCertificate(context.Background(), mock.Anything).RunAndReturn(func(request *certificates.DeleteCertificateRequest) (*certificates.DeleteCertificateResponse, error) {
 		assert.Equal(t, certificateHashData.HashAlgorithm, request.CertificateHashData.HashAlgorithm)
 		assert.Equal(t, certificateHashData.IssuerNameHash, request.CertificateHashData.IssuerNameHash)
 		assert.Equal(t, certificateHashData.IssuerKeyHash, request.CertificateHashData.IssuerKeyHash)
@@ -66,7 +67,7 @@ func (suite *OcppV16TestSuite) TestDeleteCertificateE2EMocked() {
 	require.Nil(t, err)
 
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.DeleteCertificate(wsId, func(confirmation *certificates.DeleteCertificateResponse, err error) {
+	err = suite.centralSystem.DeleteCertificate(context.Background(), wsId, func(confirmation *certificates.DeleteCertificateResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

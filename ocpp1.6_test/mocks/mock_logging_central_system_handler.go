@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	logging "github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockLogCentralSystemHandler) EXPECT() *MockLogCentralSystemHandler_Exp
 }
 
 // OnLogStatusNotification provides a mock function with given fields: chargingStationID, request
-func (_m *MockLogCentralSystemHandler) OnLogStatusNotification(chargingStationID string, request *logging.LogStatusNotificationRequest) (*logging.LogStatusNotificationResponse, error) {
+func (_m *MockLogCentralSystemHandler) OnLogStatusNotification(ctx context.Context, chargingStationID string, request *logging.LogStatusNotificationRequest) (*logging.LogStatusNotificationResponse, error) {
 	ret := _m.Called(chargingStationID, request)
 
 	if len(ret) == 0 {

@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -148,7 +149,7 @@ func (suite *OcppV2TestSuite) TestTransactionEventE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.NoError(t, err)
-	response, err := suite.chargingStation.TransactionEvent(eventType, timestamp, triggerReason, seqNo, info, func(request *transactions.TransactionEventRequest) {
+	response, err := suite.chargingStation.TransactionEvent(context.Background(), eventType, timestamp, triggerReason, seqNo, info, func(request *transactions.TransactionEventRequest) {
 		request.MeterValue = []types.MeterValue{meterValue}
 		request.Evse = &evse
 		request.IDToken = &idToken

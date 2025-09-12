@@ -1,6 +1,7 @@
 package ocpp16
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
@@ -61,12 +62,12 @@ func (cp *chargePoint) Errors() <-chan error {
 	return cp.errC
 }
 
-func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVendor string, props ...func(request *core.BootNotificationRequest)) (*core.BootNotificationConfirmation, error) {
+func (cp *chargePoint) BootNotification(ctx context.Context, chargePointModel string, chargePointVendor string, props ...func(request *core.BootNotificationRequest)) (*core.BootNotificationConfirmation, error) {
 	request := core.NewBootNotificationRequest(chargePointModel, chargePointVendor)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -74,12 +75,12 @@ func (cp *chargePoint) BootNotification(chargePointModel string, chargePointVend
 	}
 }
 
-func (cp *chargePoint) Authorize(idTag string, props ...func(request *core.AuthorizeRequest)) (*core.AuthorizeConfirmation, error) {
+func (cp *chargePoint) Authorize(ctx context.Context, idTag string, props ...func(request *core.AuthorizeRequest)) (*core.AuthorizeConfirmation, error) {
 	request := core.NewAuthorizationRequest(idTag)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -87,12 +88,12 @@ func (cp *chargePoint) Authorize(idTag string, props ...func(request *core.Autho
 	}
 }
 
-func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *core.DataTransferRequest)) (*core.DataTransferConfirmation, error) {
+func (cp *chargePoint) DataTransfer(ctx context.Context, vendorId string, props ...func(request *core.DataTransferRequest)) (*core.DataTransferConfirmation, error) {
 	request := core.NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -100,12 +101,12 @@ func (cp *chargePoint) DataTransfer(vendorId string, props ...func(request *core
 	}
 }
 
-func (cp *chargePoint) Heartbeat(props ...func(request *core.HeartbeatRequest)) (*core.HeartbeatConfirmation, error) {
+func (cp *chargePoint) Heartbeat(ctx context.Context, props ...func(request *core.HeartbeatRequest)) (*core.HeartbeatConfirmation, error) {
 	request := core.NewHeartbeatRequest()
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -113,12 +114,12 @@ func (cp *chargePoint) Heartbeat(props ...func(request *core.HeartbeatRequest)) 
 	}
 }
 
-func (cp *chargePoint) MeterValues(connectorId int, meterValues []types.MeterValue, props ...func(request *core.MeterValuesRequest)) (*core.MeterValuesConfirmation, error) {
+func (cp *chargePoint) MeterValues(ctx context.Context, connectorId int, meterValues []types.MeterValue, props ...func(request *core.MeterValuesRequest)) (*core.MeterValuesConfirmation, error) {
 	request := core.NewMeterValuesRequest(connectorId, meterValues)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -126,12 +127,12 @@ func (cp *chargePoint) MeterValues(connectorId int, meterValues []types.MeterVal
 	}
 }
 
-func (cp *chargePoint) StartTransaction(connectorId int, idTag string, meterStart int, timestamp *types.DateTime, props ...func(request *core.StartTransactionRequest)) (*core.StartTransactionConfirmation, error) {
+func (cp *chargePoint) StartTransaction(ctx context.Context, connectorId int, idTag string, meterStart int, timestamp *types.DateTime, props ...func(request *core.StartTransactionRequest)) (*core.StartTransactionConfirmation, error) {
 	request := core.NewStartTransactionRequest(connectorId, idTag, meterStart, timestamp)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -139,12 +140,12 @@ func (cp *chargePoint) StartTransaction(connectorId int, idTag string, meterStar
 	}
 }
 
-func (cp *chargePoint) StopTransaction(meterStop int, timestamp *types.DateTime, transactionId int, props ...func(request *core.StopTransactionRequest)) (*core.StopTransactionConfirmation, error) {
+func (cp *chargePoint) StopTransaction(ctx context.Context, meterStop int, timestamp *types.DateTime, transactionId int, props ...func(request *core.StopTransactionRequest)) (*core.StopTransactionConfirmation, error) {
 	request := core.NewStopTransactionRequest(meterStop, timestamp, transactionId)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -152,12 +153,12 @@ func (cp *chargePoint) StopTransaction(meterStop int, timestamp *types.DateTime,
 	}
 }
 
-func (cp *chargePoint) StatusNotification(connectorId int, errorCode core.ChargePointErrorCode, status core.ChargePointStatus, props ...func(request *core.StatusNotificationRequest)) (*core.StatusNotificationConfirmation, error) {
+func (cp *chargePoint) StatusNotification(ctx context.Context, connectorId int, errorCode core.ChargePointErrorCode, status core.ChargePointStatus, props ...func(request *core.StatusNotificationRequest)) (*core.StatusNotificationConfirmation, error) {
 	request := core.NewStatusNotificationRequest(connectorId, errorCode, status)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -165,12 +166,12 @@ func (cp *chargePoint) StatusNotification(connectorId int, errorCode core.Charge
 	}
 }
 
-func (cp *chargePoint) DiagnosticsStatusNotification(status firmware.DiagnosticsStatus, props ...func(request *firmware.DiagnosticsStatusNotificationRequest)) (*firmware.DiagnosticsStatusNotificationConfirmation, error) {
+func (cp *chargePoint) DiagnosticsStatusNotification(ctx context.Context, status firmware.DiagnosticsStatus, props ...func(request *firmware.DiagnosticsStatusNotificationRequest)) (*firmware.DiagnosticsStatusNotificationConfirmation, error) {
 	request := firmware.NewDiagnosticsStatusNotificationRequest(status)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -178,12 +179,12 @@ func (cp *chargePoint) DiagnosticsStatusNotification(status firmware.Diagnostics
 	}
 }
 
-func (cp *chargePoint) FirmwareStatusNotification(status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error) {
+func (cp *chargePoint) FirmwareStatusNotification(ctx context.Context, status firmware.FirmwareStatus, props ...func(request *firmware.FirmwareStatusNotificationRequest)) (*firmware.FirmwareStatusNotificationConfirmation, error) {
 	request := firmware.NewFirmwareStatusNotificationRequest(status)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	} else {
@@ -191,48 +192,48 @@ func (cp *chargePoint) FirmwareStatusNotification(status firmware.FirmwareStatus
 	}
 }
 
-func (cp *chargePoint) SecurityEventNotification(typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error) {
+func (cp *chargePoint) SecurityEventNotification(ctx context.Context, typ string, timestamp *types.DateTime, props ...func(request *security.SecurityEventNotificationRequest)) (*security.SecurityEventNotificationResponse, error) {
 	request := security.NewSecurityEventNotificationRequest(typ, timestamp)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 	return confirmation.(*security.SecurityEventNotificationResponse), err
 }
 
-func (cp *chargePoint) SignCertificate(CSR string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error) {
+func (cp *chargePoint) SignCertificate(ctx context.Context, CSR string, props ...func(request *security.SignCertificateRequest)) (*security.SignCertificateResponse, error) {
 	request := security.NewSignCertificateRequest(CSR)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 	return confirmation.(*security.SignCertificateResponse), err
 }
 
-func (cp *chargePoint) SignedUpdateFirmwareStatusNotification(status securefirmware.FirmwareStatus, props ...func(request *securefirmware.SignedFirmwareStatusNotificationRequest)) (*securefirmware.SignedFirmwareStatusNotificationResponse, error) {
+func (cp *chargePoint) SignedUpdateFirmwareStatusNotification(ctx context.Context, status securefirmware.FirmwareStatus, props ...func(request *securefirmware.SignedFirmwareStatusNotificationRequest)) (*securefirmware.SignedFirmwareStatusNotificationResponse, error) {
 	request := securefirmware.NewFirmwareStatusNotificationRequest(status)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 	return confirmation.(*securefirmware.SignedFirmwareStatusNotificationResponse), err
 }
 
-func (cp *chargePoint) LogStatusNotification(status logging.UploadLogStatus, requestId int, props ...func(request *logging.LogStatusNotificationRequest)) (*logging.LogStatusNotificationResponse, error) {
+func (cp *chargePoint) LogStatusNotification(ctx context.Context, status logging.UploadLogStatus, requestId int, props ...func(request *logging.LogStatusNotificationRequest)) (*logging.LogStatusNotificationResponse, error) {
 	request := logging.NewLogStatusNotificationRequest(status, requestId)
 	for _, fn := range props {
 		fn(request)
 	}
-	confirmation, err := cp.SendRequest(request)
+	confirmation, err := cp.SendRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +284,7 @@ func (cp *chargePoint) SetCertificateHandler(handler certificates.ChargePointHan
 	cp.certificateHandler = handler
 }
 
-func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) {
+func (cp *chargePoint) SendRequest(ctx context.Context, request ocpp.Request) (ocpp.Response, error) {
 	featureName := request.GetFeatureName()
 	if _, found := cp.client.GetProfileForFeature(featureName); !found {
 		return nil, fmt.Errorf("feature %v is unsupported on charge point (missing profile), cannot send request", featureName)
@@ -297,7 +298,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) 
 	// Create channel and pass it to a callback function, for retrieving asynchronous response
 	asyncResponseC := make(chan asyncResponse, 1)
 	send := func() error {
-		return cp.client.SendRequest(request)
+		return cp.client.SendRequestWithContext(ctx, request)
 	}
 	err := cp.callbacks.TryQueue("main", send, func(confirmation ocpp.Response, err error) {
 		asyncResponseC <- asyncResponse{r: confirmation, e: err}
@@ -316,7 +317,7 @@ func (cp *chargePoint) SendRequest(request ocpp.Request) (ocpp.Response, error) 
 	}
 }
 
-func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
+func (cp *chargePoint) SendRequestAsync(ctx context.Context, request ocpp.Request, callback func(confirmation ocpp.Response, err error)) error {
 	featureName := request.GetFeatureName()
 	if _, found := cp.client.GetProfileForFeature(featureName); !found {
 		return fmt.Errorf("feature %v is unsupported on charge point (missing profile), cannot send request", featureName)
@@ -333,7 +334,7 @@ func (cp *chargePoint) SendRequestAsync(request ocpp.Request, callback func(conf
 	}
 	// Response will be retrieved asynchronously via asyncHandler
 	send := func() error {
-		return cp.client.SendRequest(request)
+		return cp.client.SendRequestWithContext(ctx, request)
 	}
 	err := cp.callbacks.TryQueue("main", send, callback)
 	return err
@@ -376,13 +377,13 @@ func (cp *chargePoint) clearCallbacks(invokeCallback bool) {
 	}
 }
 
-func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, requestId string) {
+func (cp *chargePoint) sendResponse(ctx context.Context, confirmation ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
 		if ocppError, ok := err.(*ocpp.Error); ok {
-			err = cp.client.SendError(requestId, ocppError.Code, ocppError.Description, nil)
+			err = cp.client.SendErrorWithContext(ctx, requestId, ocppError.Code, ocppError.Description, nil)
 		} else {
-			err = cp.client.SendError(requestId, ocppj.InternalError, err.Error(), nil)
+			err = cp.client.SendErrorWithContext(ctx, requestId, ocppj.InternalError, err.Error(), nil)
 		}
 		if err != nil {
 			// Error while sending an error. Will attempt to send a default error instead
@@ -397,13 +398,13 @@ func (cp *chargePoint) sendResponse(confirmation ocpp.Response, err error, reque
 	if confirmation == nil || reflect.ValueOf(confirmation).IsNil() {
 		err = fmt.Errorf("empty confirmation to request %s", requestId)
 		// Sending a dummy error to server instead, then notify client implementation
-		_ = cp.client.SendError(requestId, ocppj.GenericError, err.Error(), nil)
+		_ = cp.client.SendErrorWithContext(ctx, requestId, ocppj.GenericError, err.Error(), nil)
 		cp.error(err)
 		return
 	}
 
 	// send confirmation response
-	err = cp.client.SendResponse(requestId, confirmation)
+	err = cp.client.SendResponseWithContext(ctx, requestId, confirmation)
 	if err != nil {
 		// Error while sending an error. Will attempt to send a default error instead
 		cp.client.HandleFailedResponseError(requestId, err, confirmation.GetFeatureName())
@@ -438,83 +439,83 @@ func (cp *chargePoint) IsConnected() bool {
 	return cp.client.IsConnected()
 }
 
-func (cp *chargePoint) notImplementedError(requestId string, action string) {
-	err := cp.client.SendError(requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+func (cp *chargePoint) notImplementedError(ctx context.Context, requestId string, action string) {
+	err := cp.client.SendErrorWithContext(ctx, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
 		err = fmt.Errorf("replying cs to request %s with 'not implemented': %w", requestId, err)
 		cp.error(err)
 	}
 }
 
-func (cp *chargePoint) notSupportedError(requestId string, action string) {
-	err := cp.client.SendError(requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
+func (cp *chargePoint) notSupportedError(ctx context.Context, requestId string, action string) {
+	err := cp.client.SendErrorWithContext(ctx, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on charge point", action), nil)
 	if err != nil {
 		err = fmt.Errorf("replying cs to request %s with 'not supported': %w", requestId, err)
 		cp.error(err)
 	}
 }
 
-func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId string, action string) {
+func (cp *chargePoint) handleIncomingRequest(ctx context.Context, request ocpp.Request, requestId string, action string) {
 	profile, found := cp.client.GetProfileForFeature(action)
 	// Check whether action is supported and a handler for it exists
 	if !found {
-		cp.notImplementedError(requestId, action)
+		cp.notImplementedError(ctx, requestId, action)
 		return
 	} else {
 		switch profile.Name {
 		case core.ProfileName:
 			if cp.coreHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case localauth.ProfileName:
 			if cp.localAuthListHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case firmware.ProfileName:
 			if cp.firmwareHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case reservation.ProfileName:
 			if cp.reservationHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case remotetrigger.ProfileName:
 			if cp.remoteTriggerHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case smartcharging.ProfileName:
 			if cp.smartChargingHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case security.ProfileName:
 			if cp.securityHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case logging.ProfileName:
 			if cp.logHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case extendedtriggermessage.ProfileName:
 			if cp.extendedTriggerMessageHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case securefirmware.ProfileName:
 			if cp.secureFirmwareHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		case certificates.ProfileName:
 			if cp.certificateHandler == nil {
-				cp.notSupportedError(requestId, action)
+				cp.notSupportedError(ctx, requestId, action)
 				return
 			}
 		}
@@ -525,60 +526,60 @@ func (cp *chargePoint) handleIncomingRequest(request ocpp.Request, requestId str
 	var err error
 	switch action {
 	case core.ChangeAvailabilityFeatureName:
-		confirmation, err = cp.coreHandler.OnChangeAvailability(request.(*core.ChangeAvailabilityRequest))
+		confirmation, err = cp.coreHandler.OnChangeAvailability(ctx, request.(*core.ChangeAvailabilityRequest))
 	case core.ChangeConfigurationFeatureName:
-		confirmation, err = cp.coreHandler.OnChangeConfiguration(request.(*core.ChangeConfigurationRequest))
+		confirmation, err = cp.coreHandler.OnChangeConfiguration(ctx, request.(*core.ChangeConfigurationRequest))
 	case core.ClearCacheFeatureName:
-		confirmation, err = cp.coreHandler.OnClearCache(request.(*core.ClearCacheRequest))
+		confirmation, err = cp.coreHandler.OnClearCache(ctx, request.(*core.ClearCacheRequest))
 	case core.DataTransferFeatureName:
-		confirmation, err = cp.coreHandler.OnDataTransfer(request.(*core.DataTransferRequest))
+		confirmation, err = cp.coreHandler.OnDataTransfer(ctx, request.(*core.DataTransferRequest))
 	case core.GetConfigurationFeatureName:
-		confirmation, err = cp.coreHandler.OnGetConfiguration(request.(*core.GetConfigurationRequest))
+		confirmation, err = cp.coreHandler.OnGetConfiguration(ctx, request.(*core.GetConfigurationRequest))
 	case core.RemoteStartTransactionFeatureName:
-		confirmation, err = cp.coreHandler.OnRemoteStartTransaction(request.(*core.RemoteStartTransactionRequest))
+		confirmation, err = cp.coreHandler.OnRemoteStartTransaction(ctx, request.(*core.RemoteStartTransactionRequest))
 	case core.RemoteStopTransactionFeatureName:
-		confirmation, err = cp.coreHandler.OnRemoteStopTransaction(request.(*core.RemoteStopTransactionRequest))
+		confirmation, err = cp.coreHandler.OnRemoteStopTransaction(ctx, request.(*core.RemoteStopTransactionRequest))
 	case core.ResetFeatureName:
-		confirmation, err = cp.coreHandler.OnReset(request.(*core.ResetRequest))
+		confirmation, err = cp.coreHandler.OnReset(ctx, request.(*core.ResetRequest))
 	case core.UnlockConnectorFeatureName:
-		confirmation, err = cp.coreHandler.OnUnlockConnector(request.(*core.UnlockConnectorRequest))
+		confirmation, err = cp.coreHandler.OnUnlockConnector(ctx, request.(*core.UnlockConnectorRequest))
 	case localauth.GetLocalListVersionFeatureName:
-		confirmation, err = cp.localAuthListHandler.OnGetLocalListVersion(request.(*localauth.GetLocalListVersionRequest))
+		confirmation, err = cp.localAuthListHandler.OnGetLocalListVersion(ctx, request.(*localauth.GetLocalListVersionRequest))
 	case localauth.SendLocalListFeatureName:
-		confirmation, err = cp.localAuthListHandler.OnSendLocalList(request.(*localauth.SendLocalListRequest))
+		confirmation, err = cp.localAuthListHandler.OnSendLocalList(ctx, request.(*localauth.SendLocalListRequest))
 	case firmware.GetDiagnosticsFeatureName:
-		confirmation, err = cp.firmwareHandler.OnGetDiagnostics(request.(*firmware.GetDiagnosticsRequest))
+		confirmation, err = cp.firmwareHandler.OnGetDiagnostics(ctx, request.(*firmware.GetDiagnosticsRequest))
 	case firmware.UpdateFirmwareFeatureName:
-		confirmation, err = cp.firmwareHandler.OnUpdateFirmware(request.(*firmware.UpdateFirmwareRequest))
+		confirmation, err = cp.firmwareHandler.OnUpdateFirmware(ctx, request.(*firmware.UpdateFirmwareRequest))
 	case reservation.ReserveNowFeatureName:
-		confirmation, err = cp.reservationHandler.OnReserveNow(request.(*reservation.ReserveNowRequest))
+		confirmation, err = cp.reservationHandler.OnReserveNow(ctx, request.(*reservation.ReserveNowRequest))
 	case reservation.CancelReservationFeatureName:
-		confirmation, err = cp.reservationHandler.OnCancelReservation(request.(*reservation.CancelReservationRequest))
+		confirmation, err = cp.reservationHandler.OnCancelReservation(ctx, request.(*reservation.CancelReservationRequest))
 	case remotetrigger.TriggerMessageFeatureName:
-		confirmation, err = cp.remoteTriggerHandler.OnTriggerMessage(request.(*remotetrigger.TriggerMessageRequest))
+		confirmation, err = cp.remoteTriggerHandler.OnTriggerMessage(ctx, request.(*remotetrigger.TriggerMessageRequest))
 	case smartcharging.SetChargingProfileFeatureName:
-		confirmation, err = cp.smartChargingHandler.OnSetChargingProfile(request.(*smartcharging.SetChargingProfileRequest))
+		confirmation, err = cp.smartChargingHandler.OnSetChargingProfile(ctx, request.(*smartcharging.SetChargingProfileRequest))
 	case smartcharging.ClearChargingProfileFeatureName:
-		confirmation, err = cp.smartChargingHandler.OnClearChargingProfile(request.(*smartcharging.ClearChargingProfileRequest))
+		confirmation, err = cp.smartChargingHandler.OnClearChargingProfile(ctx, request.(*smartcharging.ClearChargingProfileRequest))
 	case smartcharging.GetCompositeScheduleFeatureName:
-		confirmation, err = cp.smartChargingHandler.OnGetCompositeSchedule(request.(*smartcharging.GetCompositeScheduleRequest))
+		confirmation, err = cp.smartChargingHandler.OnGetCompositeSchedule(ctx, request.(*smartcharging.GetCompositeScheduleRequest))
 	case security.CertificateSignedFeatureName:
-		confirmation, err = cp.securityHandler.OnCertificateSigned(request.(*security.CertificateSignedRequest))
+		confirmation, err = cp.securityHandler.OnCertificateSigned(ctx, request.(*security.CertificateSignedRequest))
 	case logging.GetLogFeatureName:
-		confirmation, err = cp.logHandler.OnGetLog(request.(*logging.GetLogRequest))
+		confirmation, err = cp.logHandler.OnGetLog(ctx, request.(*logging.GetLogRequest))
 	case securefirmware.SignedUpdateFirmwareFeatureName:
-		confirmation, err = cp.secureFirmwareHandler.OnSignedUpdateFirmware(request.(*securefirmware.SignedUpdateFirmwareRequest))
+		confirmation, err = cp.secureFirmwareHandler.OnSignedUpdateFirmware(ctx, request.(*securefirmware.SignedUpdateFirmwareRequest))
 	case certificates.GetInstalledCertificateIdsFeatureName:
-		confirmation, err = cp.certificateHandler.OnGetInstalledCertificateIds(request.(*certificates.GetInstalledCertificateIdsRequest))
+		confirmation, err = cp.certificateHandler.OnGetInstalledCertificateIds(ctx, request.(*certificates.GetInstalledCertificateIdsRequest))
 	case certificates.DeleteCertificateFeatureName:
-		confirmation, err = cp.certificateHandler.OnDeleteCertificate(request.(*certificates.DeleteCertificateRequest))
+		confirmation, err = cp.certificateHandler.OnDeleteCertificate(ctx, request.(*certificates.DeleteCertificateRequest))
 	case certificates.InstallCertificateFeatureName:
-		confirmation, err = cp.certificateHandler.OnInstallCertificate(request.(*certificates.InstallCertificateRequest))
+		confirmation, err = cp.certificateHandler.OnInstallCertificate(ctx, request.(*certificates.InstallCertificateRequest))
 	case extendedtriggermessage.ExtendedTriggerMessageFeatureName:
-		confirmation, err = cp.extendedTriggerMessageHandler.OnExtendedTriggerMessage(request.(*extendedtriggermessage.ExtendedTriggerMessageRequest))
+		confirmation, err = cp.extendedTriggerMessageHandler.OnExtendedTriggerMessage(ctx, request.(*extendedtriggermessage.ExtendedTriggerMessageRequest))
 	default:
-		cp.notSupportedError(requestId, action)
+		cp.notSupportedError(ctx, requestId, action)
 		return
 	}
-	cp.sendResponse(confirmation, err, requestId)
+	cp.sendResponse(ctx, confirmation, err, requestId)
 }

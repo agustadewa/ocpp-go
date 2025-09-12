@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -62,7 +63,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromChargePointE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
-	confirmation, err := suite.chargingStation.DataTransfer(vendorId)
+	confirmation, err := suite.chargingStation.DataTransfer(context.Background(), vendorId)
 	assert.Nil(t, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.Status)
@@ -94,7 +95,7 @@ func (suite *OcppV2TestSuite) TestDataTransferFromCentralSystemE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.DataTransfer(wsId, func(confirmation *data.DataTransferResponse, err error) {
+	err = suite.csms.DataTransfer(context.Background(), wsId, func(confirmation *data.DataTransferResponse, err error) {
 		assert.Nil(t, err)
 		assert.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

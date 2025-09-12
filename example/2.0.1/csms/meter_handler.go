@@ -1,8 +1,12 @@
 package main
 
-import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/meter"
+import (
+	"context"
 
-func (c *CSMSHandler) OnMeterValues(chargingStationID string, request *meter.MeterValuesRequest) (response *meter.MeterValuesResponse, err error) {
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/meter"
+)
+
+func (c *CSMSHandler) OnMeterValues(ctx context.Context, chargingStationID string, request *meter.MeterValuesRequest) (response *meter.MeterValuesResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("received meter values for EVSE %v. Meter values:\n", request.EvseID)
 	for _, mv := range request.MeterValue {
 		logDefault(chargingStationID, request.GetFeatureName()).Printf("%v", mv)

@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -66,7 +67,7 @@ func (suite *OcppV2TestSuite) TestSignCertificateE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.SignCertificate(csr, func(request *security.SignCertificateRequest) {
+	response, err := suite.chargingStation.SignCertificate(context.Background(), csr, func(request *security.SignCertificateRequest) {
 		request.CertificateType = certificateType
 	})
 	require.Nil(t, err)

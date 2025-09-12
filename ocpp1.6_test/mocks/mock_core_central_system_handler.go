@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	core "github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockCoreCentralSystemHandler) EXPECT() *MockCoreCentralSystemHandler_E
 }
 
 // OnAuthorize provides a mock function with given fields: chargePointId, request
-func (_m *MockCoreCentralSystemHandler) OnAuthorize(chargePointId string, request *core.AuthorizeRequest) (*core.AuthorizeConfirmation, error) {
+func (_m *MockCoreCentralSystemHandler) OnAuthorize(ctx context.Context, chargePointId string, request *core.AuthorizeRequest) (*core.AuthorizeConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {
@@ -80,7 +82,7 @@ func (_c *MockCoreCentralSystemHandler_OnAuthorize_Call) RunAndReturn(run func(s
 }
 
 // OnBootNotification provides a mock function with given fields: chargePointId, request
-func (_m *MockCoreCentralSystemHandler) OnBootNotification(chargePointId string, request *core.BootNotificationRequest) (*core.BootNotificationConfirmation, error) {
+func (_m *MockCoreCentralSystemHandler) OnBootNotification(ctx context.Context, chargePointId string, request *core.BootNotificationRequest) (*core.BootNotificationConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {
@@ -139,7 +141,7 @@ func (_c *MockCoreCentralSystemHandler_OnBootNotification_Call) RunAndReturn(run
 }
 
 // OnDataTransfer provides a mock function with given fields: chargePointId, request
-func (_m *MockCoreCentralSystemHandler) OnDataTransfer(chargePointId string, request *core.DataTransferRequest) (*core.DataTransferConfirmation, error) {
+func (_m *MockCoreCentralSystemHandler) OnDataTransfer(ctx context.Context, chargePointId string, request *core.DataTransferRequest) (*core.DataTransferConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {
@@ -198,7 +200,7 @@ func (_c *MockCoreCentralSystemHandler_OnDataTransfer_Call) RunAndReturn(run fun
 }
 
 // OnHeartbeat provides a mock function with given fields: chargePointId, request
-func (_m *MockCoreCentralSystemHandler) OnHeartbeat(chargePointId string, request *core.HeartbeatRequest) (*core.HeartbeatConfirmation, error) {
+func (_m *MockCoreCentralSystemHandler) OnHeartbeat(ctx context.Context, chargePointId string, request *core.HeartbeatRequest) (*core.HeartbeatConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {
@@ -257,7 +259,7 @@ func (_c *MockCoreCentralSystemHandler_OnHeartbeat_Call) RunAndReturn(run func(s
 }
 
 // OnMeterValues provides a mock function with given fields: chargePointId, request
-func (_m *MockCoreCentralSystemHandler) OnMeterValues(chargePointId string, request *core.MeterValuesRequest) (*core.MeterValuesConfirmation, error) {
+func (_m *MockCoreCentralSystemHandler) OnMeterValues(ctx context.Context, chargePointId string, request *core.MeterValuesRequest) (*core.MeterValuesConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {
@@ -316,7 +318,7 @@ func (_c *MockCoreCentralSystemHandler_OnMeterValues_Call) RunAndReturn(run func
 }
 
 // OnStartTransaction provides a mock function with given fields: chargePointId, request
-func (_m *MockCoreCentralSystemHandler) OnStartTransaction(chargePointId string, request *core.StartTransactionRequest) (*core.StartTransactionConfirmation, error) {
+func (_m *MockCoreCentralSystemHandler) OnStartTransaction(ctx context.Context, chargePointId string, request *core.StartTransactionRequest) (*core.StartTransactionConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {
@@ -375,7 +377,7 @@ func (_c *MockCoreCentralSystemHandler_OnStartTransaction_Call) RunAndReturn(run
 }
 
 // OnStatusNotification provides a mock function with given fields: chargePointId, request
-func (_m *MockCoreCentralSystemHandler) OnStatusNotification(chargePointId string, request *core.StatusNotificationRequest) (*core.StatusNotificationConfirmation, error) {
+func (_m *MockCoreCentralSystemHandler) OnStatusNotification(ctx context.Context, chargePointId string, request *core.StatusNotificationRequest) (*core.StatusNotificationConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {
@@ -434,7 +436,7 @@ func (_c *MockCoreCentralSystemHandler_OnStatusNotification_Call) RunAndReturn(r
 }
 
 // OnStopTransaction provides a mock function with given fields: chargePointId, request
-func (_m *MockCoreCentralSystemHandler) OnStopTransaction(chargePointId string, request *core.StopTransactionRequest) (*core.StopTransactionConfirmation, error) {
+func (_m *MockCoreCentralSystemHandler) OnStopTransaction(ctx context.Context, chargePointId string, request *core.StopTransactionRequest) (*core.StopTransactionConfirmation, error) {
 	ret := _m.Called(chargePointId, request)
 
 	if len(ret) == 0 {

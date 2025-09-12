@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -27,7 +28,7 @@ func (suite *OcppV16TestSuite) TestStatusNotificationRequestValidation() {
 		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, Info: ">50................................................", Status: core.ChargePointStatusAvailable}, false},
 		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, VendorErrorCode: ">50................................................", Status: core.ChargePointStatusAvailable}, false},
 		{core.StatusNotificationRequest{ConnectorId: 0, ErrorCode: core.NoError, VendorId: ">255............................................................................................................................................................................................................................................................", Status: core.ChargePointStatusAvailable}, false},
-		//{ocpp16.StatusNotificationRequest{ConnectorId: 0, ErrorCode: ocpp16.NoError, Info: "mockInfo", Status: ocpp16.ChargePointStatusAvailable, Timestamp: ocpp16.DateTime{Time: time.Now().Add(1 * time.Hour)}, VendorId: "mockId", VendorErrorCode: "mockErrorCode"}, false},
+		// {ocpp16.StatusNotificationRequest{ConnectorId: 0, ErrorCode: ocpp16.NoError, Info: "mockInfo", Status: ocpp16.ChargePointStatusAvailable, Timestamp: ocpp16.DateTime{Time: time.Now().Add(1 * time.Hour)}, VendorId: "mockId", VendorErrorCode: "mockErrorCode"}, false},
 	}
 	ExecuteGenericTestTable(t, requestTable)
 }
@@ -76,7 +77,7 @@ func (suite *OcppV16TestSuite) TestStatusNotificationE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.StatusNotification(connectorId, cpErrorCode, status, func(request *core.StatusNotificationRequest) {
+	confirmation, err := suite.chargePoint.StatusNotification(context.Background(), connectorId, cpErrorCode, status, func(request *core.StatusNotificationRequest) {
 		request.Timestamp = timestamp
 		request.Info = info
 		request.VendorId = vendorId

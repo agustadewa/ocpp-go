@@ -1,9 +1,10 @@
 package localauth
 
 import (
+	"reflect"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/types"
 	"gopkg.in/go-playground/validator.v9"
-	"reflect"
 )
 
 // -------------------- Send Local List (CS -> CP) --------------------
@@ -44,7 +45,7 @@ func isValidUpdateStatus(fl validator.FieldLevel) bool {
 
 type AuthorizationData struct {
 	IdTag     string           `json:"idTag" validate:"required,max=20"`
-	IdTagInfo *types.IdTagInfo `json:"idTagInfo,omitempty"` //TODO: validate required if update type is Full
+	IdTagInfo *types.IdTagInfo `json:"idTagInfo,omitempty"` // TODO: validate required if update type is Full
 }
 
 // The field definition of the SendLocalList request payload sent by the Central System to the Charge Point.
@@ -107,5 +108,5 @@ func NewSendLocalListConfirmation(status UpdateStatus) *SendLocalListConfirmatio
 func init() {
 	_ = types.Validate.RegisterValidation("updateStatus", isValidUpdateStatus)
 	_ = types.Validate.RegisterValidation("updateType16", isValidUpdateType)
-	//TODO: validation for SendLocalListMaxLength
+	// TODO: validation for SendLocalListMaxLength
 }

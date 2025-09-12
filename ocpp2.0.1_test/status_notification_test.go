@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -69,7 +70,7 @@ func (suite *OcppV2TestSuite) TestStatusNotificationE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	assert.Nil(t, err)
-	response, err := suite.chargingStation.StatusNotification(timestamp, status, evseID, connectorID)
+	response, err := suite.chargingStation.StatusNotification(context.Background(), timestamp, status, evseID, connectorID)
 	assert.Nil(t, err)
 	assert.NotNil(t, response)
 }

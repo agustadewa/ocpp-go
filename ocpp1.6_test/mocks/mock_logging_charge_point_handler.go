@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	logging "github.com/lorenzodonini/ocpp-go/ocpp1.6/logging"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockLogChargePointHandler) EXPECT() *MockLogChargePointHandler_Expecte
 }
 
 // OnGetLog provides a mock function with given fields: request
-func (_m *MockLogChargePointHandler) OnGetLog(request *logging.GetLogRequest) (*logging.GetLogResponse, error) {
+func (_m *MockLogChargePointHandler) OnGetLog(ctx context.Context, request *logging.GetLogRequest) (*logging.GetLogResponse, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

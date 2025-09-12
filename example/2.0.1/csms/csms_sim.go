@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -96,7 +97,7 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 			logDefault(chargingStationID, confirmation.GetFeatureName()).Infof("couldn't reserve connector %v: %v", connectorID, confirmation.Status)
 		}
 	}
-	e := csms.ReserveNow(chargingStationID, cb1, reservationID, expiryDate, clientIDTokenType)
+	e := csms.ReserveNow(context.Background(), chargingStationID, cb1, reservationID, expiryDate, clientIDTokenType)
 	if e != nil {
 		logDefault(chargingStationID, reservation.ReserveNowFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -113,7 +114,7 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 			logDefault(chargingStationID, confirmation.GetFeatureName()).Infof("couldn't cancel reservation %v", reservationID)
 		}
 	}
-	e = csms.CancelReservation(chargingStationID, cb2, reservationID)
+	e = csms.CancelReservation(context.Background(), chargingStationID, cb2, reservationID)
 	if e != nil {
 		logDefault(chargingStationID, reservation.ReserveNowFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -128,7 +129,7 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 			logDefault(chargingStationID, confirmation.GetFeatureName()).Infof("current local list version: %v", confirmation.VersionNumber)
 		}
 	}
-	e = csms.GetLocalListVersion(chargingStationID, cb3)
+	e = csms.GetLocalListVersion(context.Background(), chargingStationID, cb3)
 	if e != nil {
 		logDefault(chargingStationID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -169,7 +170,7 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 			}
 		}
 	}
-	e = csms.SetVariables(chargingStationID, cb4, setVariableData)
+	e = csms.SetVariables(context.Background(), chargingStationID, cb4, setVariableData)
 	if e != nil {
 		logDefault(chargingStationID, localauth.GetLocalListVersionFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -187,7 +188,7 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 			logDefault(chargingStationID, response.GetFeatureName()).Infof("%v trigger was rejected", availability.HeartbeatFeatureName)
 		}
 	}
-	e = csms.TriggerMessage(chargingStationID, cb5, remotecontrol.MessageTriggerHeartbeat)
+	e = csms.TriggerMessage(context.Background(), chargingStationID, cb5, remotecontrol.MessageTriggerHeartbeat)
 	if e != nil {
 		logDefault(chargingStationID, remotecontrol.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -205,7 +206,7 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 			logDefault(chargingStationID, response.GetFeatureName()).Infof("%v trigger was rejected", diagnostics.LogStatusNotificationFeatureName)
 		}
 	}
-	e = csms.TriggerMessage(chargingStationID, cb6, remotecontrol.MessageTriggerLogStatusNotification)
+	e = csms.TriggerMessage(context.Background(), chargingStationID, cb6, remotecontrol.MessageTriggerLogStatusNotification)
 	if e != nil {
 		logDefault(chargingStationID, remotecontrol.TriggerMessageFeatureName).Errorf("couldn't send message: %v", e)
 		return
@@ -228,7 +229,7 @@ func exampleRoutine(chargingStationID string, handler *CSMSHandler) {
 		currentTx = txID
 		break
 	}
-	e = csms.SetDisplayMessage(chargingStationID, cb7, display.MessageInfo{
+	e = csms.SetDisplayMessage(context.Background(), chargingStationID, cb7, display.MessageInfo{
 		ID:            42,
 		Priority:      display.MessagePriorityInFront,
 		State:         display.MessageStateCharging,

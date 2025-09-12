@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/core"
@@ -63,7 +64,7 @@ func (suite *OcppV16TestSuite) TestTriggerMessageE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.TriggerMessage(wsId, func(confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
+	err = suite.centralSystem.TriggerMessage(context.Background(), wsId, func(confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, status, confirmation.Status)

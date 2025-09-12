@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -70,27 +71,27 @@ type CentralSystemHandler struct {
 
 // ------------- Core profile callbacks -------------
 
-func (handler *CentralSystemHandler) OnAuthorize(chargePointId string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, err error) {
+func (handler *CentralSystemHandler) OnAuthorize(ctx context.Context, chargePointId string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, err error) {
 	logDefault(chargePointId, request.GetFeatureName()).Infof("client authorized")
 	return core.NewAuthorizationConfirmation(types.NewIdTagInfo(types.AuthorizationStatusAccepted)), nil
 }
 
-func (handler *CentralSystemHandler) OnBootNotification(chargePointId string, request *core.BootNotificationRequest) (confirmation *core.BootNotificationConfirmation, err error) {
+func (handler *CentralSystemHandler) OnBootNotification(ctx context.Context, chargePointId string, request *core.BootNotificationRequest) (confirmation *core.BootNotificationConfirmation, err error) {
 	logDefault(chargePointId, request.GetFeatureName()).Infof("boot confirmed")
 	return core.NewBootNotificationConfirmation(types.NewDateTime(time.Now()), defaultHeartbeatInterval, core.RegistrationStatusAccepted), nil
 }
 
-func (handler *CentralSystemHandler) OnDataTransfer(chargePointId string, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
+func (handler *CentralSystemHandler) OnDataTransfer(ctx context.Context, chargePointId string, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
 	logDefault(chargePointId, request.GetFeatureName()).Infof("received data %v", request.Data)
 	return core.NewDataTransferConfirmation(core.DataTransferStatusAccepted), nil
 }
 
-func (handler *CentralSystemHandler) OnHeartbeat(chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
+func (handler *CentralSystemHandler) OnHeartbeat(ctx context.Context, chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
 	logDefault(chargePointId, request.GetFeatureName()).Infof("heartbeat handled")
 	return core.NewHeartbeatConfirmation(types.NewDateTime(time.Now())), nil
 }
 
-func (handler *CentralSystemHandler) OnMeterValues(chargePointId string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, err error) {
+func (handler *CentralSystemHandler) OnMeterValues(ctx context.Context, chargePointId string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, err error) {
 	logDefault(chargePointId, request.GetFeatureName()).Infof("received meter values for connector %v. Meter values:\n", request.ConnectorId)
 	for _, mv := range request.MeterValue {
 		logDefault(chargePointId, request.GetFeatureName()).Printf("%v", mv)
@@ -98,7 +99,7 @@ func (handler *CentralSystemHandler) OnMeterValues(chargePointId string, request
 	return core.NewMeterValuesConfirmation(), nil
 }
 
-func (handler *CentralSystemHandler) OnStatusNotification(chargePointId string, request *core.StatusNotificationRequest) (confirmation *core.StatusNotificationConfirmation, err error) {
+func (handler *CentralSystemHandler) OnStatusNotification(ctx context.Context, chargePointId string, request *core.StatusNotificationRequest) (confirmation *core.StatusNotificationConfirmation, err error) {
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
@@ -115,7 +116,7 @@ func (handler *CentralSystemHandler) OnStatusNotification(chargePointId string, 
 	return core.NewStatusNotificationConfirmation(), nil
 }
 
-func (handler *CentralSystemHandler) OnStartTransaction(chargePointId string, request *core.StartTransactionRequest) (confirmation *core.StartTransactionConfirmation, err error) {
+func (handler *CentralSystemHandler) OnStartTransaction(ctx context.Context, chargePointId string, request *core.StartTransactionRequest) (confirmation *core.StartTransactionConfirmation, err error) {
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
@@ -138,7 +139,7 @@ func (handler *CentralSystemHandler) OnStartTransaction(chargePointId string, re
 	return core.NewStartTransactionConfirmation(types.NewIdTagInfo(types.AuthorizationStatusAccepted), transaction.id), nil
 }
 
-func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, err error) {
+func (handler *CentralSystemHandler) OnStopTransaction(ctx context.Context, chargePointId string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, err error) {
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
@@ -160,7 +161,7 @@ func (handler *CentralSystemHandler) OnStopTransaction(chargePointId string, req
 
 // ------------- Firmware management profile callbacks -------------
 
-func (handler *CentralSystemHandler) OnDiagnosticsStatusNotification(chargePointId string, request *firmware.DiagnosticsStatusNotificationRequest) (confirmation *firmware.DiagnosticsStatusNotificationConfirmation, err error) {
+func (handler *CentralSystemHandler) OnDiagnosticsStatusNotification(ctx context.Context, chargePointId string, request *firmware.DiagnosticsStatusNotificationRequest) (confirmation *firmware.DiagnosticsStatusNotificationConfirmation, err error) {
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
@@ -170,7 +171,7 @@ func (handler *CentralSystemHandler) OnDiagnosticsStatusNotification(chargePoint
 	return firmware.NewDiagnosticsStatusNotificationConfirmation(), nil
 }
 
-func (handler *CentralSystemHandler) OnFirmwareStatusNotification(chargePointId string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationConfirmation, err error) {
+func (handler *CentralSystemHandler) OnFirmwareStatusNotification(ctx context.Context, chargePointId string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationConfirmation, err error) {
 	info, ok := handler.chargePoints[chargePointId]
 	if !ok {
 		return nil, fmt.Errorf("unknown charge point %v", chargePointId)
@@ -182,22 +183,22 @@ func (handler *CentralSystemHandler) OnFirmwareStatusNotification(chargePointId 
 
 // No callbacks for Local Auth management, Reservation, Remote trigger or Smart Charging profile on central system
 
-func (handler *CentralSystemHandler) OnSecurityEventNotification(chargingStationID string, request *security.SecurityEventNotificationRequest) (response *security.SecurityEventNotificationResponse, err error) {
+func (handler *CentralSystemHandler) OnSecurityEventNotification(ctx context.Context, chargingStationID string, request *security.SecurityEventNotificationRequest) (response *security.SecurityEventNotificationResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("security event notification received")
 	return security.NewSecurityEventNotificationResponse(), nil
 }
 
-func (handler *CentralSystemHandler) OnSignCertificate(chargingStationID string, request *security.SignCertificateRequest) (response *security.SignCertificateResponse, err error) {
+func (handler *CentralSystemHandler) OnSignCertificate(ctx context.Context, chargingStationID string, request *security.SignCertificateRequest) (response *security.SignCertificateResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("certificate signing request received")
 	return security.NewSignCertificateResponse(types.GenericStatusAccepted), nil
 }
 
-func (handler *CentralSystemHandler) OnSignedFirmwareStatusNotification(chargingStationID string, request *securefirmware.SignedFirmwareStatusNotificationRequest) (response *securefirmware.SignedFirmwareStatusNotificationResponse, err error) {
+func (handler *CentralSystemHandler) OnSignedFirmwareStatusNotification(ctx context.Context, chargingStationID string, request *securefirmware.SignedFirmwareStatusNotificationRequest) (response *securefirmware.SignedFirmwareStatusNotificationResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("signed firmware status notification received")
 	return securefirmware.NewFirmwareStatusNotificationResponse(), nil
 }
 
-func (handler *CentralSystemHandler) OnLogStatusNotification(chargingStationID string, request *logging.LogStatusNotificationRequest) (response *logging.LogStatusNotificationResponse, err error) {
+func (handler *CentralSystemHandler) OnLogStatusNotification(ctx context.Context, chargingStationID string, request *logging.LogStatusNotificationRequest) (response *logging.LogStatusNotificationResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("log status notification received")
 	return logging.NewLogStatusNotificationResponse(), nil
 }

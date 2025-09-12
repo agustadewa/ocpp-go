@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -58,7 +59,7 @@ func (suite *OcppV2TestSuite) TestClearedChargingLimitE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargingStation.ClearedChargingLimit(chargingLimitSource, func(request *smartcharging.ClearedChargingLimitRequest) {
+	confirmation, err := suite.chargingStation.ClearedChargingLimit(context.Background(), chargingLimitSource, func(request *smartcharging.ClearedChargingLimitRequest) {
 		request.EvseID = newInt(evseID)
 	})
 	require.Nil(t, err)

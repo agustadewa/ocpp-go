@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -62,7 +63,7 @@ func (suite *OcppV16TestSuite) TestAuthorizeE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.Authorize(idTag)
+	confirmation, err := suite.chargePoint.Authorize(context.Background(), idTag)
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
 	assert.Equal(t, status, confirmation.IdTagInfo.Status)

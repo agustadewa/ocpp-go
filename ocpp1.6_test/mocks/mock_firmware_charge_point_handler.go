@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	firmware "github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (_m *MockFirmwareChargePointHandler) EXPECT() *MockFirmwareChargePointHandl
 }
 
 // OnGetDiagnostics provides a mock function with given fields: request
-func (_m *MockFirmwareChargePointHandler) OnGetDiagnostics(request *firmware.GetDiagnosticsRequest) (*firmware.GetDiagnosticsConfirmation, error) {
+func (_m *MockFirmwareChargePointHandler) OnGetDiagnostics(ctx context.Context, request *firmware.GetDiagnosticsRequest) (*firmware.GetDiagnosticsConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {
@@ -79,7 +81,7 @@ func (_c *MockFirmwareChargePointHandler_OnGetDiagnostics_Call) RunAndReturn(run
 }
 
 // OnUpdateFirmware provides a mock function with given fields: request
-func (_m *MockFirmwareChargePointHandler) OnUpdateFirmware(request *firmware.UpdateFirmwareRequest) (*firmware.UpdateFirmwareConfirmation, error) {
+func (_m *MockFirmwareChargePointHandler) OnUpdateFirmware(ctx context.Context, request *firmware.UpdateFirmwareRequest) (*firmware.UpdateFirmwareConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/diagnostics"
@@ -93,7 +94,7 @@ func (suite *OcppV2TestSuite) TestSetVariableMonitoringE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.SetVariableMonitoring(wsId, func(response *diagnostics.SetVariableMonitoringResponse, err error) {
+	err = suite.csms.SetVariableMonitoring(context.Background(), wsId, func(response *diagnostics.SetVariableMonitoringResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
 		require.NotNil(t, response.MonitoringResult)

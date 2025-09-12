@@ -1,20 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
+	"go.opentelemetry.io/otel"
 )
 
-func (handler *ChargingStationHandler) OnCancelReservation(request *reservation.CancelReservationRequest) (resp *reservation.CancelReservationResponse, err error) {
+func (handler *ChargingStationHandler) OnCancelReservation(ctx context.Context, request *reservation.CancelReservationRequest) (resp *reservation.CancelReservationResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnCancelReservation.handler")
+	defer span.End()
 	for i, e := range handler.evse {
 		if e.currentReservation == request.ReservationID {
 			// Found reservation -> cancel
 			e.currentReservation = -1
 			for j := range e.connectors {
 				if e.connectors[j].status == availability.ConnectorStatusReserved {
-					go updateConnectorStatus(handler, i, j, availability.ConnectorStatusAvailable)
+					go updateConnectorStatus(ctx, handler, i, j, availability.ConnectorStatusAvailable)
 					break
 				}
 			}
@@ -29,12 +34,14 @@ func (handler *ChargingStationHandler) OnCancelReservation(request *reservation.
 	return
 }
 
-func (handler *ChargingStationHandler) OnReserveNow(request *reservation.ReserveNowRequest) (resp *reservation.ReserveNowResponse, err error) {
+func (handler *ChargingStationHandler) OnReserveNow(ctx context.Context, request *reservation.ReserveNowRequest) (resp *reservation.ReserveNowResponse, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "OnClearVariableMonitoring.handler")
+	defer span.End()
 	var reservedEvse int
 	var reservedConnector int
 	var status reservation.ReserveNowStatus
 
-	status, reservedEvse, reservedConnector, err = handler.findConnector(request.EvseID, request.ConnectorType)
+	status, reservedEvse, reservedConnector, err = handler.findConnector(ctx, request.EvseID, request.ConnectorType)
 	if err != nil {
 		logDefault(request.GetFeatureName()).Error(err)
 	}
@@ -48,14 +55,16 @@ func (handler *ChargingStationHandler) OnReserveNow(request *reservation.Reserve
 	evse.currentReservation = request.ID
 	logDefault(request.GetFeatureName()).Infof("reservation %v accepted for evse %v, connector %v",
 		request.ID, reservedEvse, reservedConnector)
-	go updateConnectorStatus(handler, reservedEvse, reservedConnector, availability.ConnectorStatusReserved)
+	go updateConnectorStatus(ctx, handler, reservedEvse, reservedConnector, availability.ConnectorStatusReserved)
 
 	// TODO: the logic above is incomplete. Advanced support for reservation management is missing.
 	// TODO: automatically remove reservation after expiryDate
 	return
 }
 
-func (handler *ChargingStationHandler) findConnector(requestedEVSE *int, connectorType reservation.ConnectorType) (status reservation.ReserveNowStatus, evseID int, connectorID int, err error) {
+func (handler *ChargingStationHandler) findConnector(ctx context.Context, requestedEVSE *int, connectorType reservation.ConnectorType) (status reservation.ReserveNowStatus, evseID int, connectorID int, err error) {
+	ctx, span := otel.Tracer("ocpp-charging-station").Start(ctx, "findConnector")
+	defer span.End()
 	status = reservation.ReserveNowStatusAccepted
 	if requestedEVSE != nil {
 		evseID = *requestedEVSE

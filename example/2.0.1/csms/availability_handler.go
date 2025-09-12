@@ -1,19 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/availability"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-	"time"
 )
 
-func (c *CSMSHandler) OnHeartbeat(chargingStationID string, request *availability.HeartbeatRequest) (response *availability.HeartbeatResponse, err error) {
+func (c *CSMSHandler) OnHeartbeat(ctx context.Context, chargingStationID string, request *availability.HeartbeatRequest) (response *availability.HeartbeatResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("heartbeat handled")
 	response = availability.NewHeartbeatResponse(types.DateTime{Time: time.Now()})
 	return
 }
 
-func (c *CSMSHandler) OnStatusNotification(chargingStationID string, request *availability.StatusNotificationRequest) (response *availability.StatusNotificationResponse, err error) {
+func (c *CSMSHandler) OnStatusNotification(ctx context.Context, chargingStationID string, request *availability.StatusNotificationRequest) (response *availability.StatusNotificationResponse, err error) {
 	info, ok := c.chargingStations[chargingStationID]
 	if !ok {
 		return nil, fmt.Errorf("unknown charging station %v", chargingStationID)

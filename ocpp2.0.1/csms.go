@@ -1,6 +1,7 @@
 package ocpp2
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
@@ -25,6 +26,10 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type csms struct {
@@ -73,7 +78,7 @@ func (cs *csms) Errors() <-chan error {
 	return cs.errC
 }
 
-func (cs *csms) CancelReservation(clientId string, callback func(*reservation.CancelReservationResponse, error), reservationId int, props ...func(request *reservation.CancelReservationRequest)) error {
+func (cs *csms) CancelReservation(ctx context.Context, clientId string, callback func(*reservation.CancelReservationResponse, error), reservationId int, props ...func(request *reservation.CancelReservationRequest)) error {
 	request := reservation.NewCancelReservationRequest(reservationId)
 	for _, fn := range props {
 		fn(request)
@@ -85,10 +90,10 @@ func (cs *csms) CancelReservation(clientId string, callback func(*reservation.Ca
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) CertificateSigned(clientId string, callback func(*security.CertificateSignedResponse, error), certificateChain string, props ...func(*security.CertificateSignedRequest)) error {
+func (cs *csms) CertificateSigned(ctx context.Context, clientId string, callback func(*security.CertificateSignedResponse, error), certificateChain string, props ...func(*security.CertificateSignedRequest)) error {
 	request := security.NewCertificateSignedRequest(certificateChain)
 	for _, fn := range props {
 		fn(request)
@@ -100,10 +105,10 @@ func (cs *csms) CertificateSigned(clientId string, callback func(*security.Certi
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) ChangeAvailability(clientId string, callback func(*availability.ChangeAvailabilityResponse, error), operationalStatus availability.OperationalStatus, props ...func(request *availability.ChangeAvailabilityRequest)) error {
+func (cs *csms) ChangeAvailability(ctx context.Context, clientId string, callback func(*availability.ChangeAvailabilityResponse, error), operationalStatus availability.OperationalStatus, props ...func(request *availability.ChangeAvailabilityRequest)) error {
 	request := availability.NewChangeAvailabilityRequest(operationalStatus)
 	for _, fn := range props {
 		fn(request)
@@ -115,10 +120,10 @@ func (cs *csms) ChangeAvailability(clientId string, callback func(*availability.
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) ClearCache(clientId string, callback func(*authorization.ClearCacheResponse, error), props ...func(*authorization.ClearCacheRequest)) error {
+func (cs *csms) ClearCache(ctx context.Context, clientId string, callback func(*authorization.ClearCacheResponse, error), props ...func(*authorization.ClearCacheRequest)) error {
 	request := authorization.NewClearCacheRequest()
 	for _, fn := range props {
 		fn(request)
@@ -130,10 +135,10 @@ func (cs *csms) ClearCache(clientId string, callback func(*authorization.ClearCa
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) ClearChargingProfile(clientId string, callback func(*smartcharging.ClearChargingProfileResponse, error), props ...func(request *smartcharging.ClearChargingProfileRequest)) error {
+func (cs *csms) ClearChargingProfile(ctx context.Context, clientId string, callback func(*smartcharging.ClearChargingProfileResponse, error), props ...func(request *smartcharging.ClearChargingProfileRequest)) error {
 	request := smartcharging.NewClearChargingProfileRequest()
 	for _, fn := range props {
 		fn(request)
@@ -145,10 +150,10 @@ func (cs *csms) ClearChargingProfile(clientId string, callback func(*smartchargi
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) ClearDisplay(clientId string, callback func(*display.ClearDisplayResponse, error), id int, props ...func(*display.ClearDisplayRequest)) error {
+func (cs *csms) ClearDisplay(ctx context.Context, clientId string, callback func(*display.ClearDisplayResponse, error), id int, props ...func(*display.ClearDisplayRequest)) error {
 	request := display.NewClearDisplayRequest(id)
 	for _, fn := range props {
 		fn(request)
@@ -160,10 +165,10 @@ func (cs *csms) ClearDisplay(clientId string, callback func(*display.ClearDispla
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) ClearVariableMonitoring(clientId string, callback func(*diagnostics.ClearVariableMonitoringResponse, error), id []int, props ...func(*diagnostics.ClearVariableMonitoringRequest)) error {
+func (cs *csms) ClearVariableMonitoring(ctx context.Context, clientId string, callback func(*diagnostics.ClearVariableMonitoringResponse, error), id []int, props ...func(*diagnostics.ClearVariableMonitoringRequest)) error {
 	request := diagnostics.NewClearVariableMonitoringRequest(id)
 	for _, fn := range props {
 		fn(request)
@@ -175,10 +180,10 @@ func (cs *csms) ClearVariableMonitoring(clientId string, callback func(*diagnost
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) CostUpdated(clientId string, callback func(*tariffcost.CostUpdatedResponse, error), totalCost float64, transactionId string, props ...func(*tariffcost.CostUpdatedRequest)) error {
+func (cs *csms) CostUpdated(ctx context.Context, clientId string, callback func(*tariffcost.CostUpdatedResponse, error), totalCost float64, transactionId string, props ...func(*tariffcost.CostUpdatedRequest)) error {
 	request := tariffcost.NewCostUpdatedRequest(totalCost, transactionId)
 	for _, fn := range props {
 		fn(request)
@@ -190,10 +195,10 @@ func (cs *csms) CostUpdated(clientId string, callback func(*tariffcost.CostUpdat
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) CustomerInformation(clientId string, callback func(*diagnostics.CustomerInformationResponse, error), requestId int, report bool, clear bool, props ...func(*diagnostics.CustomerInformationRequest)) error {
+func (cs *csms) CustomerInformation(ctx context.Context, clientId string, callback func(*diagnostics.CustomerInformationResponse, error), requestId int, report bool, clear bool, props ...func(*diagnostics.CustomerInformationRequest)) error {
 	request := diagnostics.NewCustomerInformationRequest(requestId, report, clear)
 	for _, fn := range props {
 		fn(request)
@@ -205,10 +210,10 @@ func (cs *csms) CustomerInformation(clientId string, callback func(*diagnostics.
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) DataTransfer(clientId string, callback func(*data.DataTransferResponse, error), vendorId string, props ...func(request *data.DataTransferRequest)) error {
+func (cs *csms) DataTransfer(ctx context.Context, clientId string, callback func(*data.DataTransferResponse, error), vendorId string, props ...func(request *data.DataTransferRequest)) error {
 	request := data.NewDataTransferRequest(vendorId)
 	for _, fn := range props {
 		fn(request)
@@ -220,10 +225,10 @@ func (cs *csms) DataTransfer(clientId string, callback func(*data.DataTransferRe
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) DeleteCertificate(clientId string, callback func(*iso15118.DeleteCertificateResponse, error), data types.CertificateHashData, props ...func(*iso15118.DeleteCertificateRequest)) error {
+func (cs *csms) DeleteCertificate(ctx context.Context, clientId string, callback func(*iso15118.DeleteCertificateResponse, error), data types.CertificateHashData, props ...func(*iso15118.DeleteCertificateRequest)) error {
 	request := iso15118.NewDeleteCertificateRequest(data)
 	for _, fn := range props {
 		fn(request)
@@ -235,10 +240,10 @@ func (cs *csms) DeleteCertificate(clientId string, callback func(*iso15118.Delet
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetBaseReport(clientId string, callback func(*provisioning.GetBaseReportResponse, error), requestId int, reportBase provisioning.ReportBaseType, props ...func(*provisioning.GetBaseReportRequest)) error {
+func (cs *csms) GetBaseReport(ctx context.Context, clientId string, callback func(*provisioning.GetBaseReportResponse, error), requestId int, reportBase provisioning.ReportBaseType, props ...func(*provisioning.GetBaseReportRequest)) error {
 	request := provisioning.NewGetBaseReportRequest(requestId, reportBase)
 	for _, fn := range props {
 		fn(request)
@@ -250,10 +255,10 @@ func (cs *csms) GetBaseReport(clientId string, callback func(*provisioning.GetBa
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetChargingProfiles(clientId string, callback func(*smartcharging.GetChargingProfilesResponse, error), chargingProfile smartcharging.ChargingProfileCriterion, props ...func(*smartcharging.GetChargingProfilesRequest)) error {
+func (cs *csms) GetChargingProfiles(ctx context.Context, clientId string, callback func(*smartcharging.GetChargingProfilesResponse, error), chargingProfile smartcharging.ChargingProfileCriterion, props ...func(*smartcharging.GetChargingProfilesRequest)) error {
 	request := smartcharging.NewGetChargingProfilesRequest(chargingProfile)
 	for _, fn := range props {
 		fn(request)
@@ -265,10 +270,10 @@ func (cs *csms) GetChargingProfiles(clientId string, callback func(*smartchargin
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetCompositeSchedule(clientId string, callback func(*smartcharging.GetCompositeScheduleResponse, error), duration int, evseId int, props ...func(*smartcharging.GetCompositeScheduleRequest)) error {
+func (cs *csms) GetCompositeSchedule(ctx context.Context, clientId string, callback func(*smartcharging.GetCompositeScheduleResponse, error), duration int, evseId int, props ...func(*smartcharging.GetCompositeScheduleRequest)) error {
 	request := smartcharging.NewGetCompositeScheduleRequest(duration, evseId)
 	for _, fn := range props {
 		fn(request)
@@ -280,10 +285,10 @@ func (cs *csms) GetCompositeSchedule(clientId string, callback func(*smartchargi
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetDisplayMessages(clientId string, callback func(*display.GetDisplayMessagesResponse, error), requestId int, props ...func(*display.GetDisplayMessagesRequest)) error {
+func (cs *csms) GetDisplayMessages(ctx context.Context, clientId string, callback func(*display.GetDisplayMessagesResponse, error), requestId int, props ...func(*display.GetDisplayMessagesRequest)) error {
 	request := display.NewGetDisplayMessagesRequest(requestId)
 	for _, fn := range props {
 		fn(request)
@@ -295,10 +300,10 @@ func (cs *csms) GetDisplayMessages(clientId string, callback func(*display.GetDi
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*iso15118.GetInstalledCertificateIdsResponse, error), props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error {
+func (cs *csms) GetInstalledCertificateIds(ctx context.Context, clientId string, callback func(*iso15118.GetInstalledCertificateIdsResponse, error), props ...func(*iso15118.GetInstalledCertificateIdsRequest)) error {
 	request := iso15118.NewGetInstalledCertificateIdsRequest()
 	for _, fn := range props {
 		fn(request)
@@ -310,10 +315,10 @@ func (cs *csms) GetInstalledCertificateIds(clientId string, callback func(*iso15
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetLocalListVersion(clientId string, callback func(*localauth.GetLocalListVersionResponse, error), props ...func(*localauth.GetLocalListVersionRequest)) error {
+func (cs *csms) GetLocalListVersion(ctx context.Context, clientId string, callback func(*localauth.GetLocalListVersionResponse, error), props ...func(*localauth.GetLocalListVersionRequest)) error {
 	request := localauth.NewGetLocalListVersionRequest()
 	for _, fn := range props {
 		fn(request)
@@ -325,10 +330,10 @@ func (cs *csms) GetLocalListVersion(clientId string, callback func(*localauth.Ge
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetLog(clientId string, callback func(*diagnostics.GetLogResponse, error), logType diagnostics.LogType, requestID int, logParameters diagnostics.LogParameters, props ...func(*diagnostics.GetLogRequest)) error {
+func (cs *csms) GetLog(ctx context.Context, clientId string, callback func(*diagnostics.GetLogResponse, error), logType diagnostics.LogType, requestID int, logParameters diagnostics.LogParameters, props ...func(*diagnostics.GetLogRequest)) error {
 	request := diagnostics.NewGetLogRequest(logType, requestID, logParameters)
 	for _, fn := range props {
 		fn(request)
@@ -340,10 +345,10 @@ func (cs *csms) GetLog(clientId string, callback func(*diagnostics.GetLogRespons
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetMonitoringReport(clientId string, callback func(*diagnostics.GetMonitoringReportResponse, error), props ...func(*diagnostics.GetMonitoringReportRequest)) error {
+func (cs *csms) GetMonitoringReport(ctx context.Context, clientId string, callback func(*diagnostics.GetMonitoringReportResponse, error), props ...func(*diagnostics.GetMonitoringReportRequest)) error {
 	request := diagnostics.NewGetMonitoringReportRequest()
 	for _, fn := range props {
 		fn(request)
@@ -355,10 +360,10 @@ func (cs *csms) GetMonitoringReport(clientId string, callback func(*diagnostics.
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetReport(clientId string, callback func(*provisioning.GetReportResponse, error), props ...func(*provisioning.GetReportRequest)) error {
+func (cs *csms) GetReport(ctx context.Context, clientId string, callback func(*provisioning.GetReportResponse, error), props ...func(*provisioning.GetReportRequest)) error {
 	request := provisioning.NewGetReportRequest()
 	for _, fn := range props {
 		fn(request)
@@ -370,10 +375,10 @@ func (cs *csms) GetReport(clientId string, callback func(*provisioning.GetReport
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetTransactionStatus(clientId string, callback func(*transactions.GetTransactionStatusResponse, error), props ...func(*transactions.GetTransactionStatusRequest)) error {
+func (cs *csms) GetTransactionStatus(ctx context.Context, clientId string, callback func(*transactions.GetTransactionStatusResponse, error), props ...func(*transactions.GetTransactionStatusRequest)) error {
 	request := transactions.NewGetTransactionStatusRequest()
 	for _, fn := range props {
 		fn(request)
@@ -385,10 +390,10 @@ func (cs *csms) GetTransactionStatus(clientId string, callback func(*transaction
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) GetVariables(clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.GetVariableData, props ...func(*provisioning.GetVariablesRequest)) error {
+func (cs *csms) GetVariables(ctx context.Context, clientId string, callback func(*provisioning.GetVariablesResponse, error), variableData []provisioning.GetVariableData, props ...func(*provisioning.GetVariablesRequest)) error {
 	request := provisioning.NewGetVariablesRequest(variableData)
 	for _, fn := range props {
 		fn(request)
@@ -400,10 +405,10 @@ func (cs *csms) GetVariables(clientId string, callback func(*provisioning.GetVar
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) InstallCertificate(clientId string, callback func(*iso15118.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(*iso15118.InstallCertificateRequest)) error {
+func (cs *csms) InstallCertificate(ctx context.Context, clientId string, callback func(*iso15118.InstallCertificateResponse, error), certificateType types.CertificateUse, certificate string, props ...func(*iso15118.InstallCertificateRequest)) error {
 	request := iso15118.NewInstallCertificateRequest(certificateType, certificate)
 	for _, fn := range props {
 		fn(request)
@@ -415,10 +420,10 @@ func (cs *csms) InstallCertificate(clientId string, callback func(*iso15118.Inst
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) PublishFirmware(clientId string, callback func(*firmware.PublishFirmwareResponse, error), location string, checksum string, requestID int, props ...func(request *firmware.PublishFirmwareRequest)) error {
+func (cs *csms) PublishFirmware(ctx context.Context, clientId string, callback func(*firmware.PublishFirmwareResponse, error), location string, checksum string, requestID int, props ...func(request *firmware.PublishFirmwareRequest)) error {
 	request := firmware.NewPublishFirmwareRequest(location, checksum, requestID)
 	for _, fn := range props {
 		fn(request)
@@ -430,10 +435,10 @@ func (cs *csms) PublishFirmware(clientId string, callback func(*firmware.Publish
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) RequestStartTransaction(clientId string, callback func(*remotecontrol.RequestStartTransactionResponse, error), remoteStartID int, IdToken types.IdToken, props ...func(request *remotecontrol.RequestStartTransactionRequest)) error {
+func (cs *csms) RequestStartTransaction(ctx context.Context, clientId string, callback func(*remotecontrol.RequestStartTransactionResponse, error), remoteStartID int, IdToken types.IdToken, props ...func(request *remotecontrol.RequestStartTransactionRequest)) error {
 	request := remotecontrol.NewRequestStartTransactionRequest(remoteStartID, IdToken)
 	for _, fn := range props {
 		fn(request)
@@ -445,10 +450,10 @@ func (cs *csms) RequestStartTransaction(clientId string, callback func(*remoteco
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) RequestStopTransaction(clientId string, callback func(*remotecontrol.RequestStopTransactionResponse, error), transactionID string, props ...func(request *remotecontrol.RequestStopTransactionRequest)) error {
+func (cs *csms) RequestStopTransaction(ctx context.Context, clientId string, callback func(*remotecontrol.RequestStopTransactionResponse, error), transactionID string, props ...func(request *remotecontrol.RequestStopTransactionRequest)) error {
 	request := remotecontrol.NewRequestStopTransactionRequest(transactionID)
 	for _, fn := range props {
 		fn(request)
@@ -460,10 +465,10 @@ func (cs *csms) RequestStopTransaction(clientId string, callback func(*remotecon
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) ReserveNow(clientId string, callback func(*reservation.ReserveNowResponse, error), id int, expiryDateTime *types.DateTime, idToken types.IdToken, props ...func(request *reservation.ReserveNowRequest)) error {
+func (cs *csms) ReserveNow(ctx context.Context, clientId string, callback func(*reservation.ReserveNowResponse, error), id int, expiryDateTime *types.DateTime, idToken types.IdToken, props ...func(request *reservation.ReserveNowRequest)) error {
 	request := reservation.NewReserveNowRequest(id, expiryDateTime, idToken)
 	for _, fn := range props {
 		fn(request)
@@ -475,10 +480,10 @@ func (cs *csms) ReserveNow(clientId string, callback func(*reservation.ReserveNo
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) Reset(clientId string, callback func(*provisioning.ResetResponse, error), t provisioning.ResetType, props ...func(request *provisioning.ResetRequest)) error {
+func (cs *csms) Reset(ctx context.Context, clientId string, callback func(*provisioning.ResetResponse, error), t provisioning.ResetType, props ...func(request *provisioning.ResetRequest)) error {
 	request := provisioning.NewResetRequest(t)
 	for _, fn := range props {
 		fn(request)
@@ -490,10 +495,10 @@ func (cs *csms) Reset(clientId string, callback func(*provisioning.ResetResponse
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) SendLocalList(clientId string, callback func(*localauth.SendLocalListResponse, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error {
+func (cs *csms) SendLocalList(ctx context.Context, clientId string, callback func(*localauth.SendLocalListResponse, error), version int, updateType localauth.UpdateType, props ...func(request *localauth.SendLocalListRequest)) error {
 	request := localauth.NewSendLocalListRequest(version, updateType)
 	for _, fn := range props {
 		fn(request)
@@ -505,10 +510,10 @@ func (cs *csms) SendLocalList(clientId string, callback func(*localauth.SendLoca
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) SetChargingProfile(clientId string, callback func(*smartcharging.SetChargingProfileResponse, error), evseID int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error {
+func (cs *csms) SetChargingProfile(ctx context.Context, clientId string, callback func(*smartcharging.SetChargingProfileResponse, error), evseID int, chargingProfile *types.ChargingProfile, props ...func(request *smartcharging.SetChargingProfileRequest)) error {
 	request := smartcharging.NewSetChargingProfileRequest(evseID, chargingProfile)
 	for _, fn := range props {
 		fn(request)
@@ -520,10 +525,10 @@ func (cs *csms) SetChargingProfile(clientId string, callback func(*smartcharging
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) SetDisplayMessage(clientId string, callback func(*display.SetDisplayMessageResponse, error), message display.MessageInfo, props ...func(request *display.SetDisplayMessageRequest)) error {
+func (cs *csms) SetDisplayMessage(ctx context.Context, clientId string, callback func(*display.SetDisplayMessageResponse, error), message display.MessageInfo, props ...func(request *display.SetDisplayMessageRequest)) error {
 	request := display.NewSetDisplayMessageRequest(message)
 	for _, fn := range props {
 		fn(request)
@@ -535,10 +540,10 @@ func (cs *csms) SetDisplayMessage(clientId string, callback func(*display.SetDis
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) SetMonitoringBase(clientId string, callback func(*diagnostics.SetMonitoringBaseResponse, error), monitoringBase diagnostics.MonitoringBase, props ...func(request *diagnostics.SetMonitoringBaseRequest)) error {
+func (cs *csms) SetMonitoringBase(ctx context.Context, clientId string, callback func(*diagnostics.SetMonitoringBaseResponse, error), monitoringBase diagnostics.MonitoringBase, props ...func(request *diagnostics.SetMonitoringBaseRequest)) error {
 	request := diagnostics.NewSetMonitoringBaseRequest(monitoringBase)
 	for _, fn := range props {
 		fn(request)
@@ -550,10 +555,10 @@ func (cs *csms) SetMonitoringBase(clientId string, callback func(*diagnostics.Se
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) SetMonitoringLevel(clientId string, callback func(*diagnostics.SetMonitoringLevelResponse, error), severity int, props ...func(request *diagnostics.SetMonitoringLevelRequest)) error {
+func (cs *csms) SetMonitoringLevel(ctx context.Context, clientId string, callback func(*diagnostics.SetMonitoringLevelResponse, error), severity int, props ...func(request *diagnostics.SetMonitoringLevelRequest)) error {
 	request := diagnostics.NewSetMonitoringLevelRequest(severity)
 	for _, fn := range props {
 		fn(request)
@@ -565,10 +570,10 @@ func (cs *csms) SetMonitoringLevel(clientId string, callback func(*diagnostics.S
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) SetNetworkProfile(clientId string, callback func(*provisioning.SetNetworkProfileResponse, error), configurationSlot int, connectionData provisioning.NetworkConnectionProfile, props ...func(request *provisioning.SetNetworkProfileRequest)) error {
+func (cs *csms) SetNetworkProfile(ctx context.Context, clientId string, callback func(*provisioning.SetNetworkProfileResponse, error), configurationSlot int, connectionData provisioning.NetworkConnectionProfile, props ...func(request *provisioning.SetNetworkProfileRequest)) error {
 	request := provisioning.NewSetNetworkProfileRequest(configurationSlot, connectionData)
 	for _, fn := range props {
 		fn(request)
@@ -580,10 +585,10 @@ func (cs *csms) SetNetworkProfile(clientId string, callback func(*provisioning.S
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) SetVariableMonitoring(clientId string, callback func(*diagnostics.SetVariableMonitoringResponse, error), data []diagnostics.SetMonitoringData, props ...func(request *diagnostics.SetVariableMonitoringRequest)) error {
+func (cs *csms) SetVariableMonitoring(ctx context.Context, clientId string, callback func(*diagnostics.SetVariableMonitoringResponse, error), data []diagnostics.SetMonitoringData, props ...func(request *diagnostics.SetVariableMonitoringRequest)) error {
 	request := diagnostics.NewSetVariableMonitoringRequest(data)
 	for _, fn := range props {
 		fn(request)
@@ -595,10 +600,10 @@ func (cs *csms) SetVariableMonitoring(clientId string, callback func(*diagnostic
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) SetVariables(clientId string, callback func(*provisioning.SetVariablesResponse, error), data []provisioning.SetVariableData, props ...func(request *provisioning.SetVariablesRequest)) error {
+func (cs *csms) SetVariables(ctx context.Context, clientId string, callback func(*provisioning.SetVariablesResponse, error), data []provisioning.SetVariableData, props ...func(request *provisioning.SetVariablesRequest)) error {
 	request := provisioning.NewSetVariablesRequest(data)
 	for _, fn := range props {
 		fn(request)
@@ -610,10 +615,10 @@ func (cs *csms) SetVariables(clientId string, callback func(*provisioning.SetVar
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) TriggerMessage(clientId string, callback func(*remotecontrol.TriggerMessageResponse, error), requestedMessage remotecontrol.MessageTrigger, props ...func(request *remotecontrol.TriggerMessageRequest)) error {
+func (cs *csms) TriggerMessage(ctx context.Context, clientId string, callback func(*remotecontrol.TriggerMessageResponse, error), requestedMessage remotecontrol.MessageTrigger, props ...func(request *remotecontrol.TriggerMessageRequest)) error {
 	request := remotecontrol.NewTriggerMessageRequest(requestedMessage)
 	for _, fn := range props {
 		fn(request)
@@ -625,10 +630,10 @@ func (cs *csms) TriggerMessage(clientId string, callback func(*remotecontrol.Tri
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) UnlockConnector(clientId string, callback func(*remotecontrol.UnlockConnectorResponse, error), evseID int, connectorID int, props ...func(request *remotecontrol.UnlockConnectorRequest)) error {
+func (cs *csms) UnlockConnector(ctx context.Context, clientId string, callback func(*remotecontrol.UnlockConnectorResponse, error), evseID int, connectorID int, props ...func(request *remotecontrol.UnlockConnectorRequest)) error {
 	request := remotecontrol.NewUnlockConnectorRequest(evseID, connectorID)
 	for _, fn := range props {
 		fn(request)
@@ -640,10 +645,10 @@ func (cs *csms) UnlockConnector(clientId string, callback func(*remotecontrol.Un
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) UnpublishFirmware(clientId string, callback func(*firmware.UnpublishFirmwareResponse, error), checksum string, props ...func(request *firmware.UnpublishFirmwareRequest)) error {
+func (cs *csms) UnpublishFirmware(ctx context.Context, clientId string, callback func(*firmware.UnpublishFirmwareResponse, error), checksum string, props ...func(request *firmware.UnpublishFirmwareRequest)) error {
 	request := firmware.NewUnpublishFirmwareRequest(checksum)
 	for _, fn := range props {
 		fn(request)
@@ -655,10 +660,10 @@ func (cs *csms) UnpublishFirmware(clientId string, callback func(*firmware.Unpub
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
-func (cs *csms) UpdateFirmware(clientId string, callback func(*firmware.UpdateFirmwareResponse, error), requestID int, f firmware.Firmware, props ...func(request *firmware.UpdateFirmwareRequest)) error {
+func (cs *csms) UpdateFirmware(ctx context.Context, clientId string, callback func(*firmware.UpdateFirmwareResponse, error), requestID int, f firmware.Firmware, props ...func(request *firmware.UpdateFirmwareRequest)) error {
 	request := firmware.NewUpdateFirmwareRequest(requestID, f)
 	for _, fn := range props {
 		fn(request)
@@ -670,7 +675,7 @@ func (cs *csms) UpdateFirmware(clientId string, callback func(*firmware.UpdateFi
 			callback(nil, protoError)
 		}
 	}
-	return cs.SendRequestAsync(clientId, request, genericCallback)
+	return cs.SendRequestAsync(ctx, clientId, request, genericCallback)
 }
 
 func (cs *csms) SetSecurityHandler(handler security.CSMSHandler) {
@@ -757,7 +762,7 @@ func (cs *csms) SetChargingStationDisconnectedHandler(handler ChargingStationCon
 	})
 }
 
-func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback func(response ocpp.Response, err error)) error {
+func (cs *csms) SendRequestAsync(ctx context.Context, clientId string, request ocpp.Request, callback func(response ocpp.Response, err error)) error {
 	featureName := request.GetFeatureName()
 	if _, found := cs.server.GetProfileForFeature(featureName); !found {
 		return fmt.Errorf("feature %v is unsupported on CSMS (missing profile), cannot send request", featureName)
@@ -809,7 +814,7 @@ func (cs *csms) SendRequestAsync(clientId string, request ocpp.Request, callback
 	}
 
 	send := func() error {
-		return cs.server.SendRequest(clientId, request)
+		return cs.server.SendRequestWithContext(ctx, clientId, request)
 	}
 	return cs.callbackQueue.TryQueue(clientId, send, callback)
 }
@@ -823,17 +828,17 @@ func (cs *csms) Stop() {
 	cs.server.Stop()
 }
 
-func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, err error, requestId string) {
+func (cs *csms) sendResponse(ctx context.Context, chargingStationID string, response ocpp.Response, err error, requestId string) {
 	if err != nil {
 		// Send error response
 		if ocppError, ok := err.(*ocpp.Error); ok {
-			err = cs.server.SendError(chargingStationID, requestId, ocppError.Code, ocppError.Description, nil)
+			err = cs.server.SendErrorWithContext(ctx, chargingStationID, requestId, ocppError.Code, ocppError.Description, nil)
 		} else {
-			err = cs.server.SendError(chargingStationID, requestId, ocppj.InternalError, err.Error(), nil)
+			err = cs.server.SendErrorWithContext(ctx, chargingStationID, requestId, ocppj.InternalError, err.Error(), nil)
 		}
 		if err != nil {
 			// Error while sending an error. Will attempt to send a default error instead
-			cs.server.HandleFailedResponseError(chargingStationID, requestId, err, "")
+			cs.server.HandleFailedResponseError(ctx, chargingStationID, requestId, err, "")
 			// Notify client implementation
 			err = fmt.Errorf("error replying cp %s to request %s with 'internal error': %w", chargingStationID, requestId, err)
 			cs.error(err)
@@ -844,43 +849,59 @@ func (cs *csms) sendResponse(chargingStationID string, response ocpp.Response, e
 	if response == nil || reflect.ValueOf(response).IsNil() {
 		err = fmt.Errorf("empty response to %s for request %s", chargingStationID, requestId)
 		// Sending a dummy error to server instead, then notify client implementation
-		_ = cs.server.SendError(chargingStationID, requestId, ocppj.GenericError, err.Error(), nil)
+		_ = cs.server.SendErrorWithContext(ctx, chargingStationID, requestId, ocppj.GenericError, err.Error(), nil)
 		cs.error(err)
 		return
 	}
 
 	// send confirmation response
-	err = cs.server.SendResponse(chargingStationID, requestId, response)
+	err = cs.server.SendResponseWithContext(ctx, chargingStationID, requestId, response)
 	if err != nil {
 		// Error while sending an error. Will attempt to send a default error instead
-		cs.server.HandleFailedResponseError(chargingStationID, requestId, err, response.GetFeatureName())
+		cs.server.HandleFailedResponseError(ctx, chargingStationID, requestId, err, response.GetFeatureName())
 		// Notify client implementation
 		err = fmt.Errorf("error replying cp %s to request %s: %w", chargingStationID, requestId, err)
 		cs.error(err)
 	}
 }
 
-func (cs *csms) notImplementedError(chargingStationID string, requestId string, action string) {
-	err := cs.server.SendError(chargingStationID, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
+func (cs *csms) notImplementedError(ctx context.Context, chargingStationID string, requestId string, action string) {
+	err := cs.server.SendErrorWithContext(ctx, chargingStationID, requestId, ocppj.NotImplemented, fmt.Sprintf("no handler for action %v implemented", action), nil)
 	if err != nil {
 		err = fmt.Errorf("replying cs %s to request %s with 'not implemented': %w", chargingStationID, requestId, err)
 		cs.error(err)
 	}
 }
 
-func (cs *csms) notSupportedError(chargingStationID string, requestId string, action string) {
-	err := cs.server.SendError(chargingStationID, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on CSMS", action), nil)
+func (cs *csms) notSupportedError(ctx context.Context, chargingStationID string, requestId string, action string) {
+	err := cs.server.SendErrorWithContext(ctx, chargingStationID, requestId, ocppj.NotSupported, fmt.Sprintf("unsupported action %v on CSMS", action), nil)
 	if err != nil {
 		err = fmt.Errorf("replying cs %s to request %s with 'not supported': %w", chargingStationID, requestId, err)
 		cs.error(err)
 	}
 }
 
-func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection, request ocpp.Request, requestId string, action string) {
+func (cs *csms) handleIncomingRequest(ctx context.Context, chargingStation ChargingStationConnection, request ocpp.Request, requestId string, action string) {
+	// Create tracing span for incoming request handling
+	tracer := otel.Tracer("ocpp-csms")
+	ctx, span := tracer.Start(ctx, "csms.handle_request")
+	defer span.End()
+
+	// Add span attributes
+	span.SetAttributes(
+		attribute.String("ocpp.action", action),
+		attribute.String("ocpp.request_id", requestId),
+		attribute.String("ocpp.direction", "incoming"),
+		attribute.String("ocpp.role", "csms"),
+		attribute.String("ocpp.charging_station_id", chargingStation.ID()),
+	)
+
 	profile, found := cs.server.GetProfileForFeature(action)
 	// Check whether action is supported and a listener for it exists
 	if !found {
-		cs.notImplementedError(chargingStation.ID(), requestId, action)
+		span.SetStatus(codes.Error, "Feature not found")
+		span.RecordError(fmt.Errorf("feature %s not found", action))
+		cs.notImplementedError(ctx, chargingStation.ID(), requestId, action)
 		return
 	} else {
 		supported := true
@@ -951,71 +972,86 @@ func (cs *csms) handleIncomingRequest(chargingStation ChargingStationConnection,
 			}
 		}
 		if !supported {
-			cs.notSupportedError(chargingStation.ID(), requestId, action)
+			span.SetStatus(codes.Error, "Handler not supported")
+			span.RecordError(fmt.Errorf("handler for profile %s not supported", profile.Name))
+			cs.notSupportedError(ctx, chargingStation.ID(), requestId, action)
 			return
 		}
 	}
 	var response ocpp.Response
 	var err error
 	// Execute in separate goroutine, so the caller goroutine is available
-	go func() {
+	// Pass the traced context to the goroutine
+	go func(ctx context.Context, span trace.Span) {
+		defer func() {
+			// Record error on span if handler returned an error
+			if err != nil {
+				span.SetStatus(codes.Error, "Handler error")
+				span.RecordError(err)
+			} else {
+				span.SetStatus(codes.Ok, "Request handled successfully")
+			}
+		}()
+
 		switch action {
 		case provisioning.BootNotificationFeatureName:
-			response, err = cs.provisioningHandler.OnBootNotification(chargingStation.ID(), request.(*provisioning.BootNotificationRequest))
+			response, err = cs.provisioningHandler.OnBootNotification(ctx, chargingStation.ID(), request.(*provisioning.BootNotificationRequest))
 		case authorization.AuthorizeFeatureName:
-			response, err = cs.authorizationHandler.OnAuthorize(chargingStation.ID(), request.(*authorization.AuthorizeRequest))
+			response, err = cs.authorizationHandler.OnAuthorize(ctx, chargingStation.ID(), request.(*authorization.AuthorizeRequest))
 		case smartcharging.ClearedChargingLimitFeatureName:
-			response, err = cs.smartChargingHandler.OnClearedChargingLimit(chargingStation.ID(), request.(*smartcharging.ClearedChargingLimitRequest))
+			response, err = cs.smartChargingHandler.OnClearedChargingLimit(ctx, chargingStation.ID(), request.(*smartcharging.ClearedChargingLimitRequest))
 		case data.DataTransferFeatureName:
-			response, err = cs.dataHandler.OnDataTransfer(chargingStation.ID(), request.(*data.DataTransferRequest))
+			response, err = cs.dataHandler.OnDataTransfer(ctx, chargingStation.ID(), request.(*data.DataTransferRequest))
 		case firmware.FirmwareStatusNotificationFeatureName:
-			response, err = cs.firmwareHandler.OnFirmwareStatusNotification(chargingStation.ID(), request.(*firmware.FirmwareStatusNotificationRequest))
+			response, err = cs.firmwareHandler.OnFirmwareStatusNotification(ctx, chargingStation.ID(), request.(*firmware.FirmwareStatusNotificationRequest))
 		case iso15118.Get15118EVCertificateFeatureName:
-			response, err = cs.iso15118Handler.OnGet15118EVCertificate(chargingStation.ID(), request.(*iso15118.Get15118EVCertificateRequest))
+			response, err = cs.iso15118Handler.OnGet15118EVCertificate(ctx, chargingStation.ID(), request.(*iso15118.Get15118EVCertificateRequest))
 		case iso15118.GetCertificateStatusFeatureName:
-			response, err = cs.iso15118Handler.OnGetCertificateStatus(chargingStation.ID(), request.(*iso15118.GetCertificateStatusRequest))
+			response, err = cs.iso15118Handler.OnGetCertificateStatus(ctx, chargingStation.ID(), request.(*iso15118.GetCertificateStatusRequest))
 		case availability.HeartbeatFeatureName:
-			response, err = cs.availabilityHandler.OnHeartbeat(chargingStation.ID(), request.(*availability.HeartbeatRequest))
+			response, err = cs.availabilityHandler.OnHeartbeat(ctx, chargingStation.ID(), request.(*availability.HeartbeatRequest))
 		case diagnostics.LogStatusNotificationFeatureName:
-			response, err = cs.diagnosticsHandler.OnLogStatusNotification(chargingStation.ID(), request.(*diagnostics.LogStatusNotificationRequest))
+			response, err = cs.diagnosticsHandler.OnLogStatusNotification(ctx, chargingStation.ID(), request.(*diagnostics.LogStatusNotificationRequest))
 		case meter.MeterValuesFeatureName:
-			response, err = cs.meterHandler.OnMeterValues(chargingStation.ID(), request.(*meter.MeterValuesRequest))
+			response, err = cs.meterHandler.OnMeterValues(ctx, chargingStation.ID(), request.(*meter.MeterValuesRequest))
 		case smartcharging.NotifyChargingLimitFeatureName:
-			response, err = cs.smartChargingHandler.OnNotifyChargingLimit(chargingStation.ID(), request.(*smartcharging.NotifyChargingLimitRequest))
+			response, err = cs.smartChargingHandler.OnNotifyChargingLimit(ctx, chargingStation.ID(), request.(*smartcharging.NotifyChargingLimitRequest))
 		case diagnostics.NotifyCustomerInformationFeatureName:
-			response, err = cs.diagnosticsHandler.OnNotifyCustomerInformation(chargingStation.ID(), request.(*diagnostics.NotifyCustomerInformationRequest))
+			response, err = cs.diagnosticsHandler.OnNotifyCustomerInformation(ctx, chargingStation.ID(), request.(*diagnostics.NotifyCustomerInformationRequest))
 		case display.NotifyDisplayMessagesFeatureName:
-			response, err = cs.displayHandler.OnNotifyDisplayMessages(chargingStation.ID(), request.(*display.NotifyDisplayMessagesRequest))
+			response, err = cs.displayHandler.OnNotifyDisplayMessages(ctx, chargingStation.ID(), request.(*display.NotifyDisplayMessagesRequest))
 		case smartcharging.NotifyEVChargingNeedsFeatureName:
-			response, err = cs.smartChargingHandler.OnNotifyEVChargingNeeds(chargingStation.ID(), request.(*smartcharging.NotifyEVChargingNeedsRequest))
+			response, err = cs.smartChargingHandler.OnNotifyEVChargingNeeds(ctx, chargingStation.ID(), request.(*smartcharging.NotifyEVChargingNeedsRequest))
 		case smartcharging.NotifyEVChargingScheduleFeatureName:
-			response, err = cs.smartChargingHandler.OnNotifyEVChargingSchedule(chargingStation.ID(), request.(*smartcharging.NotifyEVChargingScheduleRequest))
+			response, err = cs.smartChargingHandler.OnNotifyEVChargingSchedule(ctx, chargingStation.ID(), request.(*smartcharging.NotifyEVChargingScheduleRequest))
 		case diagnostics.NotifyEventFeatureName:
-			response, err = cs.diagnosticsHandler.OnNotifyEvent(chargingStation.ID(), request.(*diagnostics.NotifyEventRequest))
+			response, err = cs.diagnosticsHandler.OnNotifyEvent(ctx, chargingStation.ID(), request.(*diagnostics.NotifyEventRequest))
 		case diagnostics.NotifyMonitoringReportFeatureName:
-			response, err = cs.diagnosticsHandler.OnNotifyMonitoringReport(chargingStation.ID(), request.(*diagnostics.NotifyMonitoringReportRequest))
+			response, err = cs.diagnosticsHandler.OnNotifyMonitoringReport(ctx, chargingStation.ID(), request.(*diagnostics.NotifyMonitoringReportRequest))
 		case provisioning.NotifyReportFeatureName:
-			response, err = cs.provisioningHandler.OnNotifyReport(chargingStation.ID(), request.(*provisioning.NotifyReportRequest))
+			response, err = cs.provisioningHandler.OnNotifyReport(ctx, chargingStation.ID(), request.(*provisioning.NotifyReportRequest))
 		case firmware.PublishFirmwareStatusNotificationFeatureName:
-			response, err = cs.firmwareHandler.OnPublishFirmwareStatusNotification(chargingStation.ID(), request.(*firmware.PublishFirmwareStatusNotificationRequest))
+			response, err = cs.firmwareHandler.OnPublishFirmwareStatusNotification(ctx, chargingStation.ID(), request.(*firmware.PublishFirmwareStatusNotificationRequest))
 		case smartcharging.ReportChargingProfilesFeatureName:
-			response, err = cs.smartChargingHandler.OnReportChargingProfiles(chargingStation.ID(), request.(*smartcharging.ReportChargingProfilesRequest))
+			response, err = cs.smartChargingHandler.OnReportChargingProfiles(ctx, chargingStation.ID(), request.(*smartcharging.ReportChargingProfilesRequest))
 		case reservation.ReservationStatusUpdateFeatureName:
-			response, err = cs.reservationHandler.OnReservationStatusUpdate(chargingStation.ID(), request.(*reservation.ReservationStatusUpdateRequest))
+			response, err = cs.reservationHandler.OnReservationStatusUpdate(ctx, chargingStation.ID(), request.(*reservation.ReservationStatusUpdateRequest))
 		case security.SecurityEventNotificationFeatureName:
-			response, err = cs.securityHandler.OnSecurityEventNotification(chargingStation.ID(), request.(*security.SecurityEventNotificationRequest))
+			response, err = cs.securityHandler.OnSecurityEventNotification(ctx, chargingStation.ID(), request.(*security.SecurityEventNotificationRequest))
 		case security.SignCertificateFeatureName:
-			response, err = cs.securityHandler.OnSignCertificate(chargingStation.ID(), request.(*security.SignCertificateRequest))
+			response, err = cs.securityHandler.OnSignCertificate(ctx, chargingStation.ID(), request.(*security.SignCertificateRequest))
 		case availability.StatusNotificationFeatureName:
-			response, err = cs.availabilityHandler.OnStatusNotification(chargingStation.ID(), request.(*availability.StatusNotificationRequest))
+			response, err = cs.availabilityHandler.OnStatusNotification(ctx, chargingStation.ID(), request.(*availability.StatusNotificationRequest))
 		case transactions.TransactionEventFeatureName:
-			response, err = cs.transactionsHandler.OnTransactionEvent(chargingStation.ID(), request.(*transactions.TransactionEventRequest))
+			response, err = cs.transactionsHandler.OnTransactionEvent(ctx, chargingStation.ID(), request.(*transactions.TransactionEventRequest))
 		default:
-			cs.notSupportedError(chargingStation.ID(), requestId, action)
+			span.SetStatus(codes.Error, "Action not supported")
+			span.RecordError(fmt.Errorf("action %s not supported", action))
+			cs.notSupportedError(ctx, chargingStation.ID(), requestId, action)
 			return
 		}
-		cs.sendResponse(chargingStation.ID(), response, err, requestId)
-	}()
+		cs.sendResponse(ctx, chargingStation.ID(), response, err, requestId)
+	}(ctx, span)
 }
 
 func (cs *csms) handleIncomingResponse(chargingStation ChargingStationConnection, response ocpp.Response, requestId string) {

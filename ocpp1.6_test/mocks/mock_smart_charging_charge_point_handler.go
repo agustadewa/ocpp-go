@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	"context"
+
 	smartcharging "github.com/lorenzodonini/ocpp-go/ocpp1.6/smartcharging"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -137,7 +139,7 @@ func (_c *MockSmartChargingChargePointHandler_OnGetCompositeSchedule_Call) RunAn
 }
 
 // OnSetChargingProfile provides a mock function with given fields: request
-func (_m *MockSmartChargingChargePointHandler) OnSetChargingProfile(request *smartcharging.SetChargingProfileRequest) (*smartcharging.SetChargingProfileConfirmation, error) {
+func (_m *MockSmartChargingChargePointHandler) OnSetChargingProfile(ctx context.Context, request *smartcharging.SetChargingProfileRequest) (*smartcharging.SetChargingProfileConfirmation, error) {
 	ret := _m.Called(request)
 
 	if len(ret) == 0 {

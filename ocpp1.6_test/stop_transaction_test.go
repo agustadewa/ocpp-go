@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -86,7 +87,7 @@ func (suite *OcppV16TestSuite) TestStopTransactionE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.StopTransaction(meterStop, timestamp, transactionId, func(request *core.StopTransactionRequest) {
+	confirmation, err := suite.chargePoint.StopTransaction(context.Background(), meterStop, timestamp, transactionId, func(request *core.StopTransactionRequest) {
 		request.IdTag = idTag
 		request.TransactionData = meterValues
 	})

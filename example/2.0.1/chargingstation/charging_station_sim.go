@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"os"
@@ -14,11 +15,19 @@ import (
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/transactions"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/types"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 	"github.com/lorenzodonini/ocpp-go/ws"
+	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
+	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -30,7 +39,78 @@ const (
 	envVarClientCertificateKey = "CLIENT_CERTIFICATE_KEY_PATH"
 )
 
+type Config struct {
+	OtelExporterEndpoint  string
+	ServiceName           string
+	DeploymentEnvironment string
+	EnableTracing         bool
+}
+
 var log *logrus.Logger
+
+// LoadOTelConfigFromEnv loads configuration from environment variables.
+func LoadOTelConfigFromEnv() Config {
+	cfg := Config{
+		OtelExporterEndpoint:  "0.0.0.0:4317", // Default for local SigNoz
+		ServiceName:           "ocpp-go/example",
+		DeploymentEnvironment: "development",
+		EnableTracing:         false,
+	}
+
+	if val, ok := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT"); ok {
+		cfg.OtelExporterEndpoint = val
+	}
+	if val, ok := os.LookupEnv("OTEL_SERVICE_NAME"); ok {
+		cfg.ServiceName = val
+	}
+	if val, ok := os.LookupEnv("OTEL_DEPLOYMENT_ENVIRONMENT"); ok {
+		cfg.DeploymentEnvironment = val
+	}
+	if val, ok := os.LookupEnv("ENABLE_TRACING"); ok {
+		if pVal, err := strconv.ParseBool(val); err == nil {
+			cfg.EnableTracing = pVal
+		}
+	}
+
+	log.Infof("config: %+v", cfg)
+
+	return cfg
+}
+
+func setupTracing(ctx context.Context, isEnabled bool, cfg *Config) func(ctx context.Context) error {
+	shutdownFn := func(ctx context.Context) error { return nil }
+	if cfg == nil || !isEnabled {
+		return shutdownFn
+	}
+
+	// Setup tracing
+	conn, err := grpc.NewClient(cfg.OtelExporterEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Errorf("failed to create gRPC connection to OTLP exporter: %v", err)
+		return shutdownFn
+	}
+	log.Infof("created gRPC connection to OTLP exporter at %s", cfg.OtelExporterEndpoint)
+
+	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	if err != nil {
+		log.Errorf("failed to create OTLP trace exporter: %v", err)
+		return shutdownFn
+	}
+	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSpanProcessor(bsp),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			cfg.OtelExporterEndpoint,
+			semconv.ServiceName(cfg.ServiceName),
+			semconv.DeploymentEnvironmentName(cfg.DeploymentEnvironment),
+		)),
+	)
+	otel.SetTracerProvider(tracerProvider)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	shutdownFn = tracerProvider.Shutdown
+	return shutdownFn
+}
 
 func setupChargingStation(chargingStationID string) ocpp2.ChargingStation {
 	return ocpp2.NewChargingStation(chargingStationID, nil, nil)
@@ -75,21 +155,28 @@ func setupTlsChargingStation(chargingStationID string) ocpp2.ChargingStation {
 
 // exampleRoutine simulates a charging station flow, where a dummy transaction is started.
 // The simulation runs for about 5 minutes.
-func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *ChargingStationHandler) {
+func exampleRoutine(ctx context.Context, chargingStation ocpp2.ChargingStation, stateHandler *ChargingStationHandler) {
+	tracer := otel.Tracer("ocpp-go/ocppj")
+	ctx, span := tracer.Start(ctx, "client.example_routine")
+	defer span.End()
+	span.AddEvent("simulation started")
+
 	dummyClientIdToken := types.IdToken{
 		IdToken: "12345",
 		Type:    types.IdTokenTypeKeyCode,
 	}
 	// Boot
-	bootResp, err := chargingStation.BootNotification(provisioning.BootReasonPowerUp, "model1", "vendor1")
+	bootResp, err := chargingStation.BootNotification(ctx, provisioning.BootReasonPowerUp, "model1", "vendor1")
 	checkError(err)
 	logDefault(bootResp.GetFeatureName()).Infof("status: %v, interval: %v, current time: %v", bootResp.Status, bootResp.Interval, bootResp.CurrentTime.String())
+	span.AddEvent("boot notification sent")
+	span.AddEvent("iterating evse")
 	// Notify EVSE status
 	for eID, e := range stateHandler.evse {
-		updateOperationalStatus(stateHandler, eID, availability.OperationalStatusOperative)
+		updateOperationalStatus(ctx, stateHandler, eID, availability.OperationalStatusOperative)
 		// Notify connector status
 		for cID := range e.connectors {
-			updateConnectorStatus(stateHandler, eID, cID, availability.ConnectorStatusAvailable)
+			updateConnectorStatus(ctx, stateHandler, eID, cID, availability.ConnectorStatusAvailable)
 		}
 	}
 	// Wait for some time ...
@@ -99,32 +186,33 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 	evseID := 1
 	evse := stateHandler.evse[evseID]
 	chargingConnector := 0
-	updateConnectorStatus(stateHandler, evseID, chargingConnector, availability.ConnectorStatusOccupied)
+	updateConnectorStatus(ctx, stateHandler, evseID, chargingConnector, availability.ConnectorStatusOccupied)
 	// Start transaction
 	tx := transactions.Transaction{
 		TransactionID: pseudoUUID(),
 		ChargingState: transactions.ChargingStateEVConnected,
 	}
 	evseReq := types.EVSE{ID: evseID, ConnectorID: &chargingConnector}
-	txEventResp, err := chargingStation.TransactionEvent(transactions.TransactionEventStarted, types.Now(), transactions.TriggerReasonCablePluggedIn, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+	txEventResp, err := chargingStation.TransactionEvent(ctx, transactions.TransactionEventStarted, types.Now(), transactions.TriggerReasonCablePluggedIn, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 		request.Evse = &evseReq
 	})
+	span.AddEvent("transaction event sent", trace.WithAttributes(attribute.String("txId", tx.TransactionID)))
 	checkError(err)
 	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v started", tx.TransactionID)
 	stateHandler.evse[evseID].currentTransaction = tx.TransactionID
 	// Authorize
-	authResp, err := chargingStation.Authorize(dummyClientIdToken.IdToken, types.IdTokenTypeKeyCode)
+	authResp, err := chargingStation.Authorize(ctx, dummyClientIdToken.IdToken, types.IdTokenTypeKeyCode)
 	checkError(err)
 	logDefault(authResp.GetFeatureName()).Infof("status: %v %v", authResp.IdTokenInfo.Status, getExpiryDate(&authResp.IdTokenInfo))
 	// Update transaction with auth info
-	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonAuthorized, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+	txEventResp, err = chargingStation.TransactionEvent(ctx, transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonAuthorized, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 		request.Evse = &evseReq
 		request.IDToken = &dummyClientIdToken
 	})
 	checkError(err)
 	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v updated", tx.TransactionID)
 	// Update transaction after energy offering starts
-	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonChargingStateChanged, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+	txEventResp, err = chargingStation.TransactionEvent(ctx, transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonChargingStateChanged, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 		request.Evse = &evseReq
 		request.IDToken = &dummyClientIdToken
 	})
@@ -132,10 +220,10 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v updated", tx.TransactionID)
 	// Periodically send meter values
 	var sampleInterval time.Duration = 5
-	//sampleInterval, ok := stateHandler.configuration.getInt(MeterValueSampleInterval)
-	//if !ok {
+	// sampleInterval, ok := stateHandler.configuration.getInt(MeterValueSampleInterval)
+	// if !ok {
 	//	sampleInterval = 5
-	//}
+	// }
 	var sampledValue types.SampledValue
 	for i := 0; i < 5; i++ {
 		time.Sleep(time.Second * sampleInterval)
@@ -155,7 +243,7 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 			SampledValue: []types.SampledValue{sampledValue},
 		}
 		// Send meter values
-		txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonMeterValuePeriodic, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+		txEventResp, err = chargingStation.TransactionEvent(ctx, transactions.TransactionEventUpdated, types.Now(), transactions.TriggerReasonMeterValuePeriodic, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 			request.MeterValue = []types.MeterValue{meterValue}
 			request.IDToken = &dummyClientIdToken
 		})
@@ -165,26 +253,42 @@ func exampleRoutine(chargingStation ocpp2.ChargingStation, stateHandler *Chargin
 		stateHandler.meterValue += 2
 	}
 	// Stop charging for connector 1
-	updateConnectorStatus(stateHandler, evseID, chargingConnector, availability.ConnectorStatusAvailable)
+	updateConnectorStatus(ctx, stateHandler, evseID, chargingConnector, availability.ConnectorStatusAvailable)
 	// Send transaction end data
 	sampledValue.Context = types.ReadingContextTransactionEnd
 	sampledValue.Value = stateHandler.meterValue
 	tx.StoppedReason = transactions.ReasonEVDisconnected
-	txEventResp, err = chargingStation.TransactionEvent(transactions.TransactionEventEnded, types.Now(), transactions.TriggerReasonEVCommunicationLost, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
+	txEventResp, err = chargingStation.TransactionEvent(ctx, transactions.TransactionEventEnded, types.Now(), transactions.TriggerReasonEVCommunicationLost, evse.nextSequence(), tx, func(request *transactions.TransactionEventRequest) {
 		request.Evse = &evseReq
 		request.IDToken = &dummyClientIdToken
 		request.MeterValue = []types.MeterValue{}
 	})
 	checkError(err)
 	logDefault(txEventResp.GetFeatureName()).Infof("transaction %v stopped", tx.TransactionID)
+
 	// Wait for some time ...
-	time.Sleep(5 * time.Minute)
+	time.Sleep(2 * time.Second)
 	// End simulation
+
+	span.AddEvent("simulation ended")
 }
 
 // Start function
 func main() {
-	// Load config
+	ctx := context.Background()
+	cfg := LoadOTelConfigFromEnv()
+
+	if cfg.EnableTracing {
+		shutdownTracing := setupTracing(ctx, cfg.EnableTracing, &cfg)
+		defer func(ctx context.Context) {
+			if err := shutdownTracing(ctx); err != nil {
+				log.Error(err)
+			}
+		}(ctx)
+		log.Info("tracing enabled")
+	}
+
+	// Load other config
 	id, ok := os.LookupEnv(envVarClientID)
 	if !ok {
 		log.Printf("no %v environment variable found, exiting...", envVarClientID)
@@ -244,13 +348,13 @@ func main() {
 	chargingStation.SetTariffCostHandler(handler)
 	chargingStation.SetTransactionsHandler(handler)
 	ocppj.SetLogger(log)
+
 	// Connects to central system
-	err := chargingStation.Start(csmsUrl)
-	if err != nil {
+	if err := chargingStation.Start(csmsUrl); err != nil {
 		log.Error(err)
 	} else {
 		log.Infof("connected to CSMS at %v", csmsUrl)
-		exampleRoutine(chargingStation, handler)
+		exampleRoutine(ctx, chargingStation, handler)
 		// Disconnect
 		chargingStation.Stop()
 		log.Infof("disconnected from CSMS")

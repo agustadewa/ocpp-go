@@ -1,9 +1,13 @@
 package main
 
-import "github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
+import (
+	"context"
 
-func (c *CSMSHandler) OnReservationStatusUpdate(chargingStationID string, request *reservation.ReservationStatusUpdateRequest) (response *reservation.ReservationStatusUpdateResponse, err error) {
+	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/reservation"
+)
+
+func (c *CSMSHandler) OnReservationStatusUpdate(ctx context.Context, chargingStationID string, request *reservation.ReservationStatusUpdateRequest) (confirmation *reservation.ReservationStatusUpdateResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Infof("updated status of reservation %v to: %v", request.ReservationID, request.Status)
-	response = reservation.NewReservationStatusUpdateResponse()
+	confirmation = reservation.NewReservationStatusUpdateResponse()
 	return
 }

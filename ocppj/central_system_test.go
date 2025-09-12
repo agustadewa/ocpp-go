@@ -1,6 +1,7 @@
 package ocppj_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -60,6 +61,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequest() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockRequest := newMockRequest("mockValue")
@@ -71,6 +74,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidRequest() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockRequest := newMockRequest("")
@@ -82,6 +87,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestNoValidation() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockRequest := newMockRequest("")
@@ -96,6 +103,8 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidJsonRequest() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockRequest := newMockRequest("somevalue")
@@ -122,6 +131,10 @@ func (suite *OcppJTestSuite) TestCentralSystemInvalidMessageHook() {
 		data := args.Get(1).([]byte)
 		assert.Equal(t, expectedError, string(data))
 	})
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		data := args.Get(2).([]byte)
+		assert.Equal(t, expectedError, string(data))
+	})
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	// Setup hook 1
 	suite.centralSystem.SetInvalidMessageHook(func(client ws.Channel, err *ocpp.Error, rawMessage string, parsedFields []interface{}) *ocpp.Error {
@@ -135,7 +148,7 @@ func (suite *OcppJTestSuite) TestCentralSystemInvalidMessageHook() {
 	})
 	suite.centralSystem.Start(8887, "/{ws}")
 	// Trigger incoming invalid CALL
-	err = suite.mockServer.MessageHandler(mockChargePoint, []byte(invalidMessage))
+	err = suite.mockServer.MessageHandler(context.Background(), mockChargePoint, []byte(invalidMessage))
 	ocppErr, ok := err.(*ocpp.Error)
 	require.True(t, ok)
 	assert.Equal(t, ocppj.FormatErrorType(suite.centralSystem), ocppErr.Code)
@@ -156,7 +169,7 @@ func (suite *OcppJTestSuite) TestCentralSystemInvalidMessageHook() {
 		return mockError
 	})
 	// Trigger incoming invalid CALL that returns custom error
-	err = suite.mockServer.MessageHandler(mockChargePoint, []byte(invalidMessage))
+	err = suite.mockServer.MessageHandler(context.Background(), mockChargePoint, []byte(invalidMessage))
 	ocppErr, ok = err.(*ocpp.Error)
 	require.True(t, ok)
 	assert.Equal(t, mockError.Code, ocppErr.Code)
@@ -168,6 +181,7 @@ func (suite *OcppJTestSuite) TestServerSendInvalidCall() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mockChargePointId, mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mockChargePointId, mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockRequest := newMockRequest("somevalue")
@@ -184,6 +198,17 @@ func (suite *OcppJTestSuite) TestCentralSystemSendRequestFailed() {
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError")).Run(func(args mock.Arguments) {
 		clientID := args.String(0)
+		q, ok := suite.serverRequestMap.Get(clientID)
+		require.True(t, ok)
+		require.False(t, q.IsEmpty())
+		req := q.Peek().(ocppj.RequestBundle)
+		callID = req.Call.GetUniqueId()
+		// Before error is returned, the request must still be pending
+		_, ok = suite.centralSystem.RequestState.GetClientState(mockChargePointId).GetPendingRequest(callID)
+		assert.True(t, ok)
+	})
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError")).Run(func(args mock.Arguments) {
+		clientID := args.String(1)
 		q, ok := suite.serverRequestMap.Get(clientID)
 		require.True(t, ok)
 		require.False(t, q.IsEmpty())
@@ -213,6 +238,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendConfirmation() {
 	mockUniqueId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockConfirmation := newMockConfirmation("mockValue")
@@ -226,6 +252,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidConfirmation() {
 	mockUniqueId := "6789"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockConfirmation := newMockConfirmation("")
@@ -240,6 +267,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendConfirmationNoValidation() {
 	mockUniqueId := "6789"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockConfirmation := newMockConfirmation("")
@@ -257,6 +285,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendConfirmationFailed() {
 	mockUniqueId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError"))
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError"))
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockConfirmation := newMockConfirmation("mockValue")
@@ -274,6 +303,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendError() {
 	mockDescription := "mockDescription"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	err := suite.centralSystem.SendError(mockChargePointId, mockUniqueId, ocppj.GenericError, mockDescription, nil)
@@ -287,6 +317,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendInvalidError() {
 	mockDescription := "mockDescription"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	err := suite.centralSystem.SendError(mockChargePointId, mockUniqueId, "InvalidErrorCode", mockDescription, nil)
@@ -299,6 +330,7 @@ func (suite *OcppJTestSuite) TestCentralSystemSendErrorFailed() {
 	mockUniqueId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError"))
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(fmt.Errorf("networkError"))
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	mockConfirmation := newMockConfirmation("mockValue")
@@ -319,6 +351,11 @@ func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
 		require.True(t, ok)
 		msgC <- data
 	})
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		data, ok := args.Get(2).([]byte)
+		require.True(t, ok)
+		msgC <- data
+	})
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointID)
 	var callResult *ocppj.CallResult
@@ -330,7 +367,7 @@ func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
 	callResult, err = suite.centralSystem.CreateCallResult(mockResponse, mockUniqueID)
 	require.Error(t, err)
 	require.Nil(t, callResult)
-	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, mockResponse.GetFeatureName())
+	suite.centralSystem.HandleFailedResponseError(context.Background(), mockChargePointID, mockUniqueID, err, mockResponse.GetFeatureName())
 	rawResponse := <-msgC
 	expectedErr := fmt.Sprintf(`[4,"%v","%v","Field %s required but not found for feature %s",{}]`, mockUniqueID, ocppj.OccurrenceConstraintErrorType(suite.centralSystem), mockField, mockResponse.GetFeatureName())
 	assert.Equal(t, expectedErr, string(rawResponse))
@@ -341,7 +378,7 @@ func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
 	callResult, err = suite.centralSystem.CreateCallResult(mockResponse, mockUniqueID)
 	require.Error(t, err)
 	require.Nil(t, callResult)
-	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, mockResponse.GetFeatureName())
+	suite.centralSystem.HandleFailedResponseError(context.Background(), mockChargePointID, mockUniqueID, err, mockResponse.GetFeatureName())
 	rawResponse = <-msgC
 	expectedErr = fmt.Sprintf(`[4,"%v","%v","Field %s must be minimum %s, but was %d for feature %s",{}]`,
 		mockUniqueID, ocppj.PropertyConstraintViolation, mockField, minParamLength, len(val), mockResponse.GetFeatureName())
@@ -351,7 +388,7 @@ func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
 	callResult, err = suite.centralSystem.CreateCallResult(mockUnsupportedResponse, mockUniqueID)
 	require.Error(t, err)
 	require.Nil(t, callResult)
-	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, mockUnsupportedResponse.GetFeatureName())
+	suite.centralSystem.HandleFailedResponseError(context.Background(), mockChargePointID, mockUniqueID, err, mockUnsupportedResponse.GetFeatureName())
 	rawResponse = <-msgC
 	expectedErr = fmt.Sprintf(`[4,"%v","%v","couldn't create Call Result for unsupported action %s",{}]`,
 		mockUniqueID, ocppj.NotSupported, mockUnsupportedResponse.GetFeatureName())
@@ -361,7 +398,7 @@ func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
 	callError, err = suite.centralSystem.CreateCallError(mockUniqueID, ocpp.ErrorCode(invalidErrorCode), "", nil)
 	require.Error(t, err)
 	require.Nil(t, callError)
-	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, "")
+	suite.centralSystem.HandleFailedResponseError(context.Background(), mockChargePointID, mockUniqueID, err, "")
 	rawResponse = <-msgC
 	expectedErr = fmt.Sprintf(`[4,"%v","%v","Key: 'CallError.ErrorCode' Error:Field validation for 'ErrorCode' failed on the 'errorCode' tag",{}]`,
 		mockUniqueID, ocppj.GenericError)
@@ -369,14 +406,14 @@ func (suite *OcppJTestSuite) TestCentralSystemHandleFailedResponse() {
 	// 5. marshaling err
 	err = suite.centralSystem.SendError(mockChargePointID, mockUniqueID, ocppj.SecurityError, "", make(chan struct{}))
 	require.Error(t, err)
-	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, "")
+	suite.centralSystem.HandleFailedResponseError(context.Background(), mockChargePointID, mockUniqueID, err, "")
 	rawResponse = <-msgC
 	expectedErr = fmt.Sprintf(`[4,"%v","%v","json: unsupported type: chan struct {}",{}]`, mockUniqueID, ocppj.GenericError)
 	assert.Equal(t, expectedErr, string(rawResponse))
 	// 6. network error
 	rawErr := fmt.Sprintf("couldn't write to websocket. No socket with id %s is open", mockChargePointID)
 	err = ocpp.NewError(ocppj.GenericError, rawErr, mockUniqueID)
-	suite.centralSystem.HandleFailedResponseError(mockChargePointID, mockUniqueID, err, "")
+	suite.centralSystem.HandleFailedResponseError(context.Background(), mockChargePointID, mockUniqueID, err, "")
 	rawResponse = <-msgC
 	expectedErr = fmt.Sprintf(`[4,"%v","%v","%s",{}]`, mockUniqueID, ocppj.GenericError, rawErr)
 	assert.Equal(t, expectedErr, string(rawResponse))
@@ -438,7 +475,7 @@ func (suite *OcppJTestSuite) TestCentralSystemRequestHandler() {
 	mockUniqueId := "5678"
 	mockValue := "someValue"
 	mockRequest := fmt.Sprintf(`[2,"%v","%v",{"mockValue":"%v"}]`, mockUniqueId, MockFeatureName, mockValue)
-	suite.centralSystem.SetRequestHandler(func(chargePoint ws.Channel, request ocpp.Request, requestId string, action string) {
+	suite.centralSystem.SetRequestHandler(func(ctx context.Context, chargePoint ws.Channel, request ocpp.Request, requestId string, action string) {
 		assert.Equal(t, mockChargePointId, chargePoint.ID())
 		assert.Equal(t, mockUniqueId, requestId)
 		assert.Equal(t, MockFeatureName, action)
@@ -449,7 +486,7 @@ func (suite *OcppJTestSuite) TestCentralSystemRequestHandler() {
 	suite.serverDispatcher.CreateClient(mockChargePointId)
 	// Simulate charge point message
 	channel := NewMockWebSocket(mockChargePointId)
-	err := suite.mockServer.MessageHandler(channel, []byte(mockRequest))
+	err := suite.mockServer.MessageHandler(context.Background(), channel, []byte(mockRequest))
 	assert.Nil(t, err)
 }
 
@@ -473,7 +510,7 @@ func (suite *OcppJTestSuite) TestCentralSystemConfirmationHandler() {
 	addMockPendingRequest(suite, mockRequest, mockUniqueId, mockChargePointId)
 	// Simulate charge point message
 	channel := NewMockWebSocket(mockChargePointId)
-	err := suite.mockServer.MessageHandler(channel, []byte(mockConfirmation))
+	err := suite.mockServer.MessageHandler(context.Background(), channel, []byte(mockConfirmation))
 	assert.Nil(t, err)
 }
 
@@ -496,6 +533,7 @@ func (suite *OcppJTestSuite) TestCentralSystemErrorHandler() {
 		assert.Equal(t, mockErrorDetails, details)
 	})
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	// Start central system
 	suite.centralSystem.Start(8887, "somePath")
@@ -504,7 +542,7 @@ func (suite *OcppJTestSuite) TestCentralSystemErrorHandler() {
 	addMockPendingRequest(suite, mockRequest, mockUniqueId, mockChargePointId)
 	// Simulate charge point message
 	channel := NewMockWebSocket(mockChargePointId)
-	err := suite.mockServer.MessageHandler(channel, []byte(mockError))
+	err := suite.mockServer.MessageHandler(context.Background(), channel, []byte(mockError))
 	assert.Nil(t, err)
 }
 
@@ -527,6 +565,7 @@ func (suite *OcppJTestSuite) TestServerEnqueueRequest() {
 	t := suite.T()
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	// Start normally
 	suite.centralSystem.Start(8887, "/{ws}")
 	mockChargePointId := "1234"
@@ -560,6 +599,9 @@ func (suite *OcppJTestSuite) TestEnqueueMultipleRequests() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
+		sentMessages += 1
+	}).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
 		sentMessages += 1
 	}).Return(nil)
 	// Start normally
@@ -597,6 +639,7 @@ func (suite *OcppJTestSuite) TestRequestQueueFull() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(nil)
 	// Start normally
 	suite.centralSystem.Start(8887, "/{ws}")
 	suite.serverDispatcher.CreateClient(mockChargePointId)
@@ -619,6 +662,9 @@ func (suite *OcppJTestSuite) TestParallelRequests() {
 	mockChargePointId := "1234"
 	suite.mockServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(nil)
 	suite.mockServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
+		sentMessages += 1
+	}).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
 		sentMessages += 1
 	}).Return(nil)
 	// Start normally
@@ -669,6 +715,14 @@ func (suite *OcppJTestSuite) TestServerRequestFlow() {
 		require.NotNil(t, call)
 		sendResponseTrigger <- triggerData{clientID: wsID, call: call}
 	}).Return(nil)
+	suite.mockServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Run(func(args mock.Arguments) {
+		wsID := args.String(1)
+		data := args.Get(2).([]byte)
+		state := suite.centralSystem.RequestState.GetClientState(wsID)
+		call := ParseCall(&suite.centralSystem.Endpoint, state, string(data), t)
+		require.NotNil(t, call)
+		sendResponseTrigger <- triggerData{clientID: wsID, call: call}
+	}).Return(nil)
 	// Mocked response generator
 	var wg sync.WaitGroup
 	wg.Add(messagesToQueue * 2)
@@ -708,7 +762,7 @@ func (suite *OcppJTestSuite) TestServerRequestFlow() {
 				require.Nil(t, err)
 			}
 			wsChannel := mockChargePoints[d.clientID]
-			err = suite.mockServer.MessageHandler(wsChannel, data) // Triggers ocppMessageHandler
+			err = suite.mockServer.MessageHandler(context.Background(), wsChannel, data) // Triggers ocppMessageHandler
 			require.Nil(t, err)
 			// Make sure the top queue element was popped
 			mutex.Lock()

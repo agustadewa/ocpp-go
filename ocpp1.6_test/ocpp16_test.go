@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -61,7 +62,7 @@ func NewMockWebSocket(id string) MockWebSocket {
 type MockWebsocketServer struct {
 	mock.Mock
 	ws.Server
-	MessageHandler            func(ws ws.Channel, data []byte) error
+	MessageHandler            func(ctx context.Context, ws ws.Channel, data []byte) error
 	NewClientHandler          func(ws ws.Channel)
 	CheckClientHandler        ws.CheckClientHandler
 	DisconnectedClientHandler func(ws ws.Channel)
@@ -77,6 +78,11 @@ func (websocketServer *MockWebsocketServer) Stop() {
 
 func (websocketServer *MockWebsocketServer) Write(webSocketId string, data []byte) error {
 	args := websocketServer.MethodCalled("Write", webSocketId, data)
+	return args.Error(0)
+}
+
+func (websocketServer *MockWebsocketServer) WriteWithContext(ctx context.Context, webSocketId string, data []byte) error {
+	args := websocketServer.MethodCalled("WriteWithContext", ctx, webSocketId, data)
 	return args.Error(0)
 }
 
@@ -107,7 +113,7 @@ func (websocketServer *MockWebsocketServer) SetCheckClientHandler(handler ws.Che
 type MockWebsocketClient struct {
 	mock.Mock
 	ws.Client
-	MessageHandler      func(data []byte) error
+	MessageHandler      func(ctx context.Context, data []byte) error
 	ReconnectedHandler  func()
 	DisconnectedHandler func(err error)
 	errC                chan error
@@ -122,7 +128,7 @@ func (websocketClient *MockWebsocketClient) Stop() {
 	websocketClient.MethodCalled("Stop")
 }
 
-func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(data []byte) error) {
+func (websocketClient *MockWebsocketClient) SetMessageHandler(handler func(ctx context.Context, data []byte) error) {
 	websocketClient.MessageHandler = handler
 }
 
@@ -136,6 +142,11 @@ func (websocketClient *MockWebsocketClient) SetDisconnectedHandler(handler func(
 
 func (websocketClient *MockWebsocketClient) Write(data []byte) error {
 	args := websocketClient.MethodCalled("Write", data)
+	return args.Error(0)
+}
+
+func (websocketClient *MockWebsocketClient) WriteWithContext(ctx context.Context, data []byte) error {
+	args := websocketClient.MethodCalled("WriteWithContext", ctx, data)
 	return args.Error(0)
 }
 
@@ -210,19 +221,19 @@ type MockCentralSystemCoreListener struct {
 	mock.Mock
 }
 
-func (coreListener *MockCentralSystemCoreListener) OnAuthorize(chargePointId string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnAuthorize(ctx context.Context, chargePointId string, request *core.AuthorizeRequest) (confirmation *core.AuthorizeConfirmation, err error) {
 	args := coreListener.MethodCalled("OnAuthorize", chargePointId, request)
 	conf := args.Get(0).(*core.AuthorizeConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockCentralSystemCoreListener) OnBootNotification(chargePointId string, request *core.BootNotificationRequest) (confirmation *core.BootNotificationConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnBootNotification(ctx context.Context, chargePointId string, request *core.BootNotificationRequest) (confirmation *core.BootNotificationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnBootNotification", chargePointId, request)
 	conf := args.Get(0).(*core.BootNotificationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockCentralSystemCoreListener) OnDataTransfer(chargePointId string, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnDataTransfer(ctx context.Context, chargePointId string, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
 	args := coreListener.MethodCalled("OnDataTransfer", chargePointId, request)
 	rawConf := args.Get(0)
 	err = args.Error(1)
@@ -232,31 +243,31 @@ func (coreListener *MockCentralSystemCoreListener) OnDataTransfer(chargePointId 
 	return
 }
 
-func (coreListener *MockCentralSystemCoreListener) OnHeartbeat(chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnHeartbeat(ctx context.Context, chargePointId string, request *core.HeartbeatRequest) (confirmation *core.HeartbeatConfirmation, err error) {
 	args := coreListener.MethodCalled("OnHeartbeat", chargePointId, request)
 	conf := args.Get(0).(*core.HeartbeatConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockCentralSystemCoreListener) OnMeterValues(chargePointId string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnMeterValues(ctx context.Context, chargePointId string, request *core.MeterValuesRequest) (confirmation *core.MeterValuesConfirmation, err error) {
 	args := coreListener.MethodCalled("OnMeterValues", chargePointId, request)
 	conf := args.Get(0).(*core.MeterValuesConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockCentralSystemCoreListener) OnStartTransaction(chargePointId string, request *core.StartTransactionRequest) (confirmation *core.StartTransactionConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnStartTransaction(ctx context.Context, chargePointId string, request *core.StartTransactionRequest) (confirmation *core.StartTransactionConfirmation, err error) {
 	args := coreListener.MethodCalled("OnStartTransaction", chargePointId, request)
 	conf := args.Get(0).(*core.StartTransactionConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockCentralSystemCoreListener) OnStatusNotification(chargePointId string, request *core.StatusNotificationRequest) (confirmation *core.StatusNotificationConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnStatusNotification(ctx context.Context, chargePointId string, request *core.StatusNotificationRequest) (confirmation *core.StatusNotificationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnStatusNotification", chargePointId, request)
 	conf := args.Get(0).(*core.StatusNotificationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockCentralSystemCoreListener) OnStopTransaction(chargePointId string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, err error) {
+func (coreListener *MockCentralSystemCoreListener) OnStopTransaction(ctx context.Context, chargePointId string, request *core.StopTransactionRequest) (confirmation *core.StopTransactionConfirmation, err error) {
 	args := coreListener.MethodCalled("OnStopTransaction", chargePointId, request)
 	conf := args.Get(0).(*core.StopTransactionConfirmation)
 	return conf, args.Error(1)
@@ -267,13 +278,13 @@ type MockChargePointCoreListener struct {
 	mock.Mock
 }
 
-func (coreListener *MockChargePointCoreListener) OnChangeAvailability(request *core.ChangeAvailabilityRequest) (confirmation *core.ChangeAvailabilityConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnChangeAvailability(ctx context.Context, request *core.ChangeAvailabilityRequest) (confirmation *core.ChangeAvailabilityConfirmation, err error) {
 	args := coreListener.MethodCalled("OnChangeAvailability", request)
 	conf := args.Get(0).(*core.ChangeAvailabilityConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockChargePointCoreListener) OnDataTransfer(request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnDataTransfer(ctx context.Context, request *core.DataTransferRequest) (confirmation *core.DataTransferConfirmation, err error) {
 	args := coreListener.MethodCalled("OnDataTransfer", request)
 	rawConf := args.Get(0)
 	err = args.Error(1)
@@ -283,43 +294,43 @@ func (coreListener *MockChargePointCoreListener) OnDataTransfer(request *core.Da
 	return
 }
 
-func (coreListener *MockChargePointCoreListener) OnChangeConfiguration(request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnChangeConfiguration(ctx context.Context, request *core.ChangeConfigurationRequest) (confirmation *core.ChangeConfigurationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnChangeConfiguration", request)
 	conf := args.Get(0).(*core.ChangeConfigurationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockChargePointCoreListener) OnClearCache(request *core.ClearCacheRequest) (confirmation *core.ClearCacheConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnClearCache(ctx context.Context, request *core.ClearCacheRequest) (confirmation *core.ClearCacheConfirmation, err error) {
 	args := coreListener.MethodCalled("OnClearCache", request)
 	conf := args.Get(0).(*core.ClearCacheConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockChargePointCoreListener) OnGetConfiguration(request *core.GetConfigurationRequest) (confirmation *core.GetConfigurationConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnGetConfiguration(ctx context.Context, request *core.GetConfigurationRequest) (confirmation *core.GetConfigurationConfirmation, err error) {
 	args := coreListener.MethodCalled("OnGetConfiguration", request)
 	conf := args.Get(0).(*core.GetConfigurationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockChargePointCoreListener) OnReset(request *core.ResetRequest) (confirmation *core.ResetConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnReset(ctx context.Context, request *core.ResetRequest) (confirmation *core.ResetConfirmation, err error) {
 	args := coreListener.MethodCalled("OnReset", request)
 	conf := args.Get(0).(*core.ResetConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockChargePointCoreListener) OnUnlockConnector(request *core.UnlockConnectorRequest) (confirmation *core.UnlockConnectorConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnUnlockConnector(ctx context.Context, request *core.UnlockConnectorRequest) (confirmation *core.UnlockConnectorConfirmation, err error) {
 	args := coreListener.MethodCalled("OnUnlockConnector", request)
 	conf := args.Get(0).(*core.UnlockConnectorConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockChargePointCoreListener) OnRemoteStartTransaction(request *core.RemoteStartTransactionRequest) (confirmation *core.RemoteStartTransactionConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnRemoteStartTransaction(ctx context.Context, request *core.RemoteStartTransactionRequest) (confirmation *core.RemoteStartTransactionConfirmation, err error) {
 	args := coreListener.MethodCalled("OnRemoteStartTransaction", request)
 	conf := args.Get(0).(*core.RemoteStartTransactionConfirmation)
 	return conf, args.Error(1)
 }
 
-func (coreListener *MockChargePointCoreListener) OnRemoteStopTransaction(request *core.RemoteStopTransactionRequest) (confirmation *core.RemoteStopTransactionConfirmation, err error) {
+func (coreListener *MockChargePointCoreListener) OnRemoteStopTransaction(ctx context.Context, request *core.RemoteStopTransactionRequest) (confirmation *core.RemoteStopTransactionConfirmation, err error) {
 	args := coreListener.MethodCalled("OnRemoteStopTransaction", request)
 	conf := args.Get(0).(*core.RemoteStopTransactionConfirmation)
 	return conf, args.Error(1)
@@ -335,13 +346,13 @@ type MockChargePointLocalAuthListListener struct {
 	mock.Mock
 }
 
-func (localAuthListListener *MockChargePointLocalAuthListListener) OnGetLocalListVersion(request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
+func (localAuthListListener *MockChargePointLocalAuthListListener) OnGetLocalListVersion(ctx context.Context, request *localauth.GetLocalListVersionRequest) (confirmation *localauth.GetLocalListVersionConfirmation, err error) {
 	args := localAuthListListener.MethodCalled("OnGetLocalListVersion", request)
 	conf := args.Get(0).(*localauth.GetLocalListVersionConfirmation)
 	return conf, args.Error(1)
 }
 
-func (localAuthListListener *MockChargePointLocalAuthListListener) OnSendLocalList(request *localauth.SendLocalListRequest) (confirmation *localauth.SendLocalListConfirmation, err error) {
+func (localAuthListListener *MockChargePointLocalAuthListListener) OnSendLocalList(ctx context.Context, request *localauth.SendLocalListRequest) (confirmation *localauth.SendLocalListConfirmation, err error) {
 	args := localAuthListListener.MethodCalled("OnSendLocalList", request)
 	conf := args.Get(0).(*localauth.SendLocalListConfirmation)
 	return conf, args.Error(1)
@@ -352,13 +363,13 @@ type MockCentralSystemFirmwareManagementListener struct {
 	mock.Mock
 }
 
-func (firmwareListener *MockCentralSystemFirmwareManagementListener) OnDiagnosticsStatusNotification(chargePointId string, request *firmware.DiagnosticsStatusNotificationRequest) (confirmation *firmware.DiagnosticsStatusNotificationConfirmation, err error) {
+func (firmwareListener *MockCentralSystemFirmwareManagementListener) OnDiagnosticsStatusNotification(ctx context.Context, chargePointId string, request *firmware.DiagnosticsStatusNotificationRequest) (confirmation *firmware.DiagnosticsStatusNotificationConfirmation, err error) {
 	args := firmwareListener.MethodCalled("OnDiagnosticsStatusNotification", chargePointId, request)
 	conf := args.Get(0).(*firmware.DiagnosticsStatusNotificationConfirmation)
 	return conf, args.Error(1)
 }
 
-func (firmwareListener *MockCentralSystemFirmwareManagementListener) OnFirmwareStatusNotification(chargePointId string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationConfirmation, err error) {
+func (firmwareListener *MockCentralSystemFirmwareManagementListener) OnFirmwareStatusNotification(ctx context.Context, chargePointId string, request *firmware.FirmwareStatusNotificationRequest) (confirmation *firmware.FirmwareStatusNotificationConfirmation, err error) {
 	args := firmwareListener.MethodCalled("OnFirmwareStatusNotification", chargePointId, request)
 	conf := args.Get(0).(*firmware.FirmwareStatusNotificationConfirmation)
 	return conf, args.Error(1)
@@ -369,13 +380,13 @@ type MockChargePointFirmwareManagementListener struct {
 	mock.Mock
 }
 
-func (firmwareListener *MockChargePointFirmwareManagementListener) OnGetDiagnostics(request *firmware.GetDiagnosticsRequest) (confirmation *firmware.GetDiagnosticsConfirmation, err error) {
+func (firmwareListener *MockChargePointFirmwareManagementListener) OnGetDiagnostics(ctx context.Context, request *firmware.GetDiagnosticsRequest) (confirmation *firmware.GetDiagnosticsConfirmation, err error) {
 	args := firmwareListener.MethodCalled("OnGetDiagnostics", request)
 	conf := args.Get(0).(*firmware.GetDiagnosticsConfirmation)
 	return conf, args.Error(1)
 }
 
-func (firmwareListener *MockChargePointFirmwareManagementListener) OnUpdateFirmware(request *firmware.UpdateFirmwareRequest) (confirmation *firmware.UpdateFirmwareConfirmation, err error) {
+func (firmwareListener *MockChargePointFirmwareManagementListener) OnUpdateFirmware(ctx context.Context, request *firmware.UpdateFirmwareRequest) (confirmation *firmware.UpdateFirmwareConfirmation, err error) {
 	args := firmwareListener.MethodCalled("OnUpdateFirmware", request)
 	conf := args.Get(0).(*firmware.UpdateFirmwareConfirmation)
 	return conf, args.Error(1)
@@ -391,13 +402,13 @@ type MockChargePointReservationListener struct {
 	mock.Mock
 }
 
-func (reservationListener *MockChargePointReservationListener) OnReserveNow(request *reservation.ReserveNowRequest) (confirmation *reservation.ReserveNowConfirmation, err error) {
+func (reservationListener *MockChargePointReservationListener) OnReserveNow(ctx context.Context, request *reservation.ReserveNowRequest) (confirmation *reservation.ReserveNowConfirmation, err error) {
 	args := reservationListener.MethodCalled("OnReserveNow", request)
 	conf := args.Get(0).(*reservation.ReserveNowConfirmation)
 	return conf, args.Error(1)
 }
 
-func (reservationListener *MockChargePointReservationListener) OnCancelReservation(request *reservation.CancelReservationRequest) (confirmation *reservation.CancelReservationConfirmation, err error) {
+func (reservationListener *MockChargePointReservationListener) OnCancelReservation(ctx context.Context, request *reservation.CancelReservationRequest) (confirmation *reservation.CancelReservationConfirmation, err error) {
 	args := reservationListener.MethodCalled("OnCancelReservation", request)
 	conf := args.Get(0).(*reservation.CancelReservationConfirmation)
 	return conf, args.Error(1)
@@ -413,7 +424,7 @@ type MockChargePointRemoteTriggerListener struct {
 	mock.Mock
 }
 
-func (remoteTriggerListener *MockChargePointRemoteTriggerListener) OnTriggerMessage(request *remotetrigger.TriggerMessageRequest) (confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
+func (remoteTriggerListener *MockChargePointRemoteTriggerListener) OnTriggerMessage(ctx context.Context, request *remotetrigger.TriggerMessageRequest) (confirmation *remotetrigger.TriggerMessageConfirmation, err error) {
 	args := remoteTriggerListener.MethodCalled("OnTriggerMessage", request)
 	conf := args.Get(0).(*remotetrigger.TriggerMessageConfirmation)
 	return conf, args.Error(1)
@@ -429,19 +440,19 @@ type MockChargePointSmartChargingListener struct {
 	mock.Mock
 }
 
-func (smartChargingListener *MockChargePointSmartChargingListener) OnSetChargingProfile(request *smartcharging.SetChargingProfileRequest) (confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
+func (smartChargingListener *MockChargePointSmartChargingListener) OnSetChargingProfile(ctx context.Context, request *smartcharging.SetChargingProfileRequest) (confirmation *smartcharging.SetChargingProfileConfirmation, err error) {
 	args := smartChargingListener.MethodCalled("OnSetChargingProfile", request)
 	conf := args.Get(0).(*smartcharging.SetChargingProfileConfirmation)
 	return conf, args.Error(1)
 }
 
-func (smartChargingListener *MockChargePointSmartChargingListener) OnClearChargingProfile(request *smartcharging.ClearChargingProfileRequest) (confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {
+func (smartChargingListener *MockChargePointSmartChargingListener) OnClearChargingProfile(ctx context.Context, request *smartcharging.ClearChargingProfileRequest) (confirmation *smartcharging.ClearChargingProfileConfirmation, err error) {
 	args := smartChargingListener.MethodCalled("OnClearChargingProfile", request)
 	conf := args.Get(0).(*smartcharging.ClearChargingProfileConfirmation)
 	return conf, args.Error(1)
 }
 
-func (smartChargingListener *MockChargePointSmartChargingListener) OnGetCompositeSchedule(request *smartcharging.GetCompositeScheduleRequest) (confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
+func (smartChargingListener *MockChargePointSmartChargingListener) OnGetCompositeSchedule(ctx context.Context, request *smartcharging.GetCompositeScheduleRequest) (confirmation *smartcharging.GetCompositeScheduleConfirmation, err error) {
 	args := smartChargingListener.MethodCalled("OnGetCompositeSchedule", request)
 	conf := args.Get(0).(*smartcharging.GetCompositeScheduleConfirmation)
 	return conf, args.Error(1)
@@ -475,9 +486,9 @@ func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener cor
 	suite.centralSystem.SetCoreHandler(coreListener)
 	suite.mockWsServer.On("Start", mock.AnythingOfType("int"), mock.AnythingOfType("string")).Return(options.startReturnArgument)
 	suite.mockWsServer.On("Stop").Return()
-	suite.mockWsServer.On("Write", mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
-		clientId := args.String(0)
-		data := args.Get(1)
+	suite.mockWsServer.On("WriteWithContext", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
+		clientId := args.String(1)
+		data := args.Get(2)
 		bytes := data.([]byte)
 		assert.Equal(t, options.clientId, clientId)
 		if options.rawWrittenMessage != nil {
@@ -486,7 +497,7 @@ func setupDefaultCentralSystemHandlers(suite *OcppV16TestSuite, coreListener cor
 		}
 		if options.forwardWrittenMessage {
 			// Notify client of incoming response
-			err := suite.mockWsClient.MessageHandler(bytes)
+			err := suite.mockWsClient.MessageHandler(context.Background(), bytes)
 			assert.Nil(t, err)
 		}
 	})
@@ -503,8 +514,8 @@ func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener core.
 			suite.mockWsServer.NewClientHandler(options.channel)
 		}
 	})
-	suite.mockWsClient.On("Write", mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
-		data := args.Get(0)
+	suite.mockWsClient.On("WriteWithContext", mock.Anything, mock.Anything).Return(options.writeReturnArgument).Run(func(args mock.Arguments) {
+		data := args.Get(1)
 		bytes := data.([]byte)
 		if options.rawWrittenMessage != nil {
 			assert.NotNil(t, bytes)
@@ -512,7 +523,7 @@ func setupDefaultChargePointHandlers(suite *OcppV16TestSuite, coreListener core.
 		}
 		// Notify server of incoming request
 		if options.forwardWrittenMessage {
-			err := suite.mockWsServer.MessageHandler(options.channel, bytes)
+			err := suite.mockWsServer.MessageHandler(context.Background(), options.channel, bytes)
 			assert.Nil(t, err)
 		}
 	})
@@ -535,7 +546,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	coreListener := &MockCentralSystemCoreListener{}
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	resultChannel := make(chan struct{}, 1)
-	suite.ocppjChargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+	suite.ocppjChargePoint.SetErrorHandler(func(ctx context.Context, err *ocpp.Error, details interface{}) {
 		assert.Equal(t, messageId, err.MessageId)
 		assert.Equal(t, ocppj.NotSupported, err.Code)
 		assert.Equal(t, errorDescription, err.Description)
@@ -547,7 +558,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	// 1. Test sending an unsupported request, expecting an error
-	err = suite.chargePoint.SendRequestAsync(request, func(confirmation ocpp.Response, err error) {
+	err = suite.chargePoint.SendRequestAsync(context.Background(), request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
 	require.Error(t, err)
@@ -555,7 +566,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	// 2. Test receiving an unsupported request on the other endpoint and receiving an error
 	// Mark mocked request as pending, otherwise response will be ignored
 	suite.ocppjChargePoint.RequestState.AddPendingRequest(messageId, request)
-	err = suite.mockWsServer.MessageHandler(channel, []byte(requestJson))
+	err = suite.mockWsServer.MessageHandler(context.Background(), channel, []byte(requestJson))
 	assert.Nil(t, err)
 	_, ok := <-resultChannel
 	assert.True(t, ok)
@@ -589,7 +600,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	// 1. Test sending an unsupported request, expecting an error
-	err = suite.centralSystem.SendRequestAsync(wsId, request, func(confirmation ocpp.Response, err error) {
+	err = suite.centralSystem.SendRequestAsync(context.Background(), wsId, request, func(confirmation ocpp.Response, err error) {
 		t.Fail()
 	})
 	require.Error(t, err)
@@ -597,7 +608,7 @@ func testUnsupportedRequestFromCentralSystem(suite *OcppV16TestSuite, request oc
 	// 2. Test receiving an unsupported request on the other endpoint and receiving an error
 	// Mark mocked request as pending, otherwise response will be ignored
 	suite.ocppjCentralSystem.RequestState.AddPendingRequest(wsId, messageId, request)
-	err = suite.mockWsClient.MessageHandler([]byte(requestJson))
+	err = suite.mockWsClient.MessageHandler(context.Background(), []byte(requestJson))
 	assert.Nil(t, err)
 	_, ok := <-resultChannel
 	assert.True(t, ok)

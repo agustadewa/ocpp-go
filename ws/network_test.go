@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
@@ -213,7 +214,7 @@ func (s *NetworkTestSuite) TestClientPongTimeout() {
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- struct{}{}
 	})
-	s.server.SetMessageHandler(func(ws Channel, data []byte) error {
+	s.server.SetMessageHandler(func(ctx context.Context, ws Channel, data []byte) error {
 		s.Fail("unexpected message received")
 		return fmt.Errorf("unexpected message received")
 	})
@@ -281,7 +282,7 @@ func (s *NetworkTestSuite) TestClientReadTimeout() {
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- struct{}{}
 	})
-	s.server.SetMessageHandler(func(ws Channel, data []byte) error {
+	s.server.SetMessageHandler(func(ctx context.Context, ws Channel, data []byte) error {
 		s.Fail("unexpected message received")
 		return fmt.Errorf("unexpected message received")
 	})
@@ -347,7 +348,7 @@ func (s *NetworkTestSuite) TestServerReadTimeout() {
 	s.server.SetDisconnectedClientHandler(func(ws Channel) {
 		serverOnDisconnected <- struct{}{}
 	})
-	s.server.SetMessageHandler(func(ws Channel, data []byte) error {
+	s.server.SetMessageHandler(func(ctx context.Context, ws Channel, data []byte) error {
 		s.Fail("unexpected message received")
 		return fmt.Errorf("unexpected message received")
 	})
@@ -397,7 +398,7 @@ func (s *NetworkTestSuite) TestServerReadTimeout() {
 	s.server.Stop()
 }
 
-//TODO: test error channel from websocket
+// TODO: test error channel from websocket
 
 func TestNetworkErrors(t *testing.T) {
 	suite.Run(t, new(NetworkTestSuite))

@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -96,7 +97,7 @@ func (suite *OcppV2TestSuite) TestNotifyEVChargingScheduleE2EMocked() {
 	suite.csms.Start(8887, "somePath")
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
-	response, err := suite.chargingStation.NotifyEVChargingSchedule(timeBase, evseID, chargingSchedule)
+	response, err := suite.chargingStation.NotifyEVChargingSchedule(context.Background(), timeBase, evseID, chargingSchedule)
 	require.Nil(t, err)
 	require.NotNil(t, response)
 	assert.Equal(t, status, response.Status)

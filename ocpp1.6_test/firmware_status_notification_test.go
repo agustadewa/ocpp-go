@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lorenzodonini/ocpp-go/ocpp1.6/firmware"
@@ -53,7 +54,7 @@ func (suite *OcppV16TestSuite) TestFirmwareStatusNotificationE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.FirmwareStatusNotification(status)
+	confirmation, err := suite.chargePoint.FirmwareStatusNotification(context.Background(), status)
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
 }

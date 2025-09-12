@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -67,7 +68,7 @@ func (suite *OcppV16TestSuite) TestMeterValuesE2EMocked() {
 	suite.centralSystem.Start(8887, "somePath")
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
-	confirmation, err := suite.chargePoint.MeterValues(connectorId, meterValues)
+	confirmation, err := suite.chargePoint.MeterValues(context.Background(), connectorId, meterValues)
 	require.Nil(t, err)
 	require.NotNil(t, confirmation)
 }

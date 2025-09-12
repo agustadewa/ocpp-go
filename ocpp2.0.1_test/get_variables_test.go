@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -100,7 +101,7 @@ func (suite *OcppV2TestSuite) TestGetVariablesE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.GetVariables(wsId, func(response *provisioning.GetVariablesResponse, err error) {
+	err = suite.csms.GetVariables(context.Background(), wsId, func(response *provisioning.GetVariablesResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, response)
 		require.Len(t, response.GetVariableResult, 1)

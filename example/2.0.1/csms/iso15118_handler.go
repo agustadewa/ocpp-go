@@ -1,17 +1,19 @@
 package main
 
 import (
+	"context"
+
 	"github.com/lorenzodonini/ocpp-go/ocpp"
 	"github.com/lorenzodonini/ocpp-go/ocpp2.0.1/iso15118"
 	"github.com/lorenzodonini/ocpp-go/ocppj"
 )
 
-func (c *CSMSHandler) OnGet15118EVCertificate(chargingStationID string, request *iso15118.Get15118EVCertificateRequest) (response *iso15118.Get15118EVCertificateResponse, err error) {
+func (c *CSMSHandler) OnGet15118EVCertificate(ctx context.Context, chargingStationID string, request *iso15118.Get15118EVCertificateRequest) (response *iso15118.Get15118EVCertificateResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }
 
-func (c *CSMSHandler) OnGetCertificateStatus(chargingStationID string, request *iso15118.GetCertificateStatusRequest) (response *iso15118.GetCertificateStatusResponse, err error) {
+func (c *CSMSHandler) OnGetCertificateStatus(ctx context.Context, chargingStationID string, request *iso15118.GetCertificateStatusRequest) (response *iso15118.GetCertificateStatusResponse, err error) {
 	logDefault(chargingStationID, request.GetFeatureName()).Warnf("Unsupported feature")
 	return nil, ocpp.NewHandlerError(ocppj.NotSupported, "Not supported")
 }

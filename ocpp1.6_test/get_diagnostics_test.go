@@ -1,6 +1,7 @@
 package ocpp16_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -78,7 +79,7 @@ func (suite *OcppV16TestSuite) TestGetDiagnosticsE2EMocked() {
 	err := suite.chargePoint.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.centralSystem.GetDiagnostics(wsId, func(confirmation *firmware.GetDiagnosticsConfirmation, err error) {
+	err = suite.centralSystem.GetDiagnostics(context.Background(), wsId, func(confirmation *firmware.GetDiagnosticsConfirmation, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		assert.Equal(t, fileName, confirmation.FileName)

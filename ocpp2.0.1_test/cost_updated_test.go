@@ -1,6 +1,7 @@
 package ocpp2_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stretchr/testify/assert"
@@ -58,7 +59,7 @@ func (suite *OcppV2TestSuite) TestCostUpdatedE2EMocked() {
 	err := suite.chargingStation.Start(wsUrl)
 	require.Nil(t, err)
 	resultChannel := make(chan bool, 1)
-	err = suite.csms.CostUpdated(wsId, func(confirmation *tariffcost.CostUpdatedResponse, err error) {
+	err = suite.csms.CostUpdated(context.Background(), wsId, func(confirmation *tariffcost.CostUpdatedResponse, err error) {
 		require.Nil(t, err)
 		require.NotNil(t, confirmation)
 		resultChannel <- true

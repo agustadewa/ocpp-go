@@ -546,7 +546,7 @@ func testUnsupportedRequestFromChargePoint(suite *OcppV16TestSuite, request ocpp
 	coreListener := &MockCentralSystemCoreListener{}
 	setupDefaultCentralSystemHandlers(suite, coreListener, expectedCentralSystemOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true})
 	resultChannel := make(chan struct{}, 1)
-	suite.ocppjChargePoint.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+	suite.ocppjChargePoint.SetErrorHandler(func(ctx context.Context, err *ocpp.Error, details interface{}) {
 		assert.Equal(t, messageId, err.MessageId)
 		assert.Equal(t, ocppj.NotSupported, err.Code)
 		assert.Equal(t, errorDescription, err.Description)

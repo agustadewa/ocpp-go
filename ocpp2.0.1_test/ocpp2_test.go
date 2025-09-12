@@ -982,7 +982,7 @@ func testUnsupportedRequestFromChargingStation(suite *OcppV2TestSuite, request o
 	setupDefaultChargingStationHandlers(suite, expectedChargingStationOptions{serverUrl: wsUrl, clientId: wsId, createChannelOnStart: true, channel: channel, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: false})
 	setupDefaultCSMSHandlers(suite, expectedCSMSOptions{clientId: wsId, rawWrittenMessage: []byte(errorJson), forwardWrittenMessage: true}, handlers...)
 	resultChannel := make(chan bool, 1)
-	suite.ocppjClient.SetErrorHandler(func(err *ocpp.Error, details interface{}) {
+	suite.ocppjClient.SetErrorHandler(func(ctx context.Context, err *ocpp.Error, details interface{}) {
 		assert.Equal(t, messageId, err.MessageId)
 		assert.Equal(t, ocppj.NotSupported, err.Code)
 		assert.Equal(t, errorDescription, err.Description)
